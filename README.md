@@ -16,10 +16,18 @@ to run otherwise, and without one there is no offline mode.
 
 **GitHub Pages** is the least effort, since this repo is already public:
 
-1. Repo → Settings → Pages → deploy from branch, `main`, folder `/ (root)`.
-2. Open `https://<user>.github.io/GYMGEAR-BACKEND5/personal-gym/` on your phone.
-3. **iPhone:** Safari → Share → *Add to Home Screen*.
+1. Open <https://github.com/starcrock7-lab/GYMGEAR-BACKEND5/settings/pages>.
+   This is the **repository's** settings, not your account's — account settings has no
+   Pages section and GitHub redirects you to the docs, which is the usual wrong turn.
+2. Source **Deploy from a branch**, branch **whichever branch holds this folder**, folder
+   **`/ (root)`**, then Save. Picking `main` before the app is merged there gives a 404.
+3. Wait a minute or two, then open
+   <https://starcrock7-lab.github.io/GYMGEAR-BACKEND5/personal-gym/> on your phone.
+4. **iPhone:** Safari → Share → *Add to Home Screen*.
    **Android:** Chrome → menu → *Install app*.
+
+`.nojekyll` at the repo root stops Pages running the files through Jekyll before serving
+them. Deleting it will eventually break something in a way that is annoying to diagnose.
 
 It now launches fullscreen from your home screen, with no browser chrome, and works in
 airplane mode.
