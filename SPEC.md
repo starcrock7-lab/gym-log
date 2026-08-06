@@ -54,11 +54,46 @@ Completely separate from the `gymgearcompare.com` API. **`server.js` is never to
 | Stack | Vanilla ES modules, IndexedDB, service worker. **Zero npm deps, no bundler** | Repo currently has one dependency (express). Nothing to break, nothing to audit, deployable as static files anywhere |
 | Charts | Hand-rolled inline SVG | A line chart and a bar chart do not justify a 200 KB library |
 | Tests | `node --test` (built into Node 22) | Zero deps; this repo has no test suite today, so the calculation layer gets the first one |
+| Backup | Encrypted, automatic, to a **private GitHub Gist** | An off-device copy that happens without being remembered. No server to run |
 | Location | `personal-gym/` | Zero coupling to `server.js`; the production API is untouched |
 
-**Privacy note.** The repo is public, so the *code* is public. The *data* never is — it is
-written only to IndexedDB on your device and to JSON files you explicitly export. There is
-no fetch/XHR/WebSocket anywhere in the app, and that is enforceable by grep.
+**Privacy note.** The repo is public, so the *code* is public. The *data* never is — it
+lives in IndexedDB on your device, and in a **secret gist** visible only to your GitHub
+account. The gist is a separate store from this repo; nothing training-related is ever
+committed here.
+
+**Local-first is not negotiable.** Backup is a *safety net*, never a dependency. Logging a
+set, reading history, and drawing a chart all work with the network off. The only network
+call in the entire app is the backup upload, and it is fire-and-forget: if it fails, the
+app says so quietly and retries later. A gym session never waits on GitHub.
+
+---
+
+## 2b. Backup design
+
+**Setup, once.** Settings → Backup → paste a GitHub token with **only** the `gist` scope.
+The token is written to IndexedDB on the device and never leaves it except as an
+`Authorization` header to `api.github.com`. It is never committed, never logged, never put
+in a URL.
+
+**Operation.** After a workout is finished — and on demand from Settings — the app
+serialises the same JSON the export button produces, encrypts it, and `PATCH`es it into a
+secret gist. The gist id is remembered after the first upload, so there is exactly one
+backup file that gets overwritten, not a pile of them.
+
+**Encryption.** AES-GCM with a key derived from a passphrase via PBKDF2-SHA256 (600k
+iterations), all through WebCrypto — no library. On by default. Setup makes you re-type the
+passphrase and tick a box confirming you have recorded it somewhere, because
+**a lost passphrase means an unreadable backup** and there is no reset. It can be turned
+off, in which case the gist holds plain JSON and is protected only by being secret.
+
+**Restore.** New phone: install, paste token and passphrase, *Restore from backup*. The app
+fetches the gist, decrypts, validates the schema, and refuses to import anything it cannot
+parse rather than half-loading it.
+
+**Failure is visible.** A bad token, a revoked token, or no signal shows a dated
+"last backed up" line in Settings and a warning once it goes stale. Silence is never
+mistaken for success.
 
 ---
 
@@ -134,9 +169,9 @@ left to taste, and each one gets a test.
 5. **Routines** — create/edit/reorder templates; "save this workout as a routine" from any
    finished session.
 6. **Body weight** — log and chart.
-7. **Settings** — rest defaults, bar and plate inventory, **Export JSON** / **Import JSON**,
-   wipe-all behind a typed confirmation. A gentle nag appears if the last export is older
-   than 30 days, because the browser is the only copy.
+7. **Settings** — rest defaults, bar and plate inventory, **Backup** (token, passphrase,
+   last-backed-up, *Back up now*, *Restore*), **Export JSON** / **Import JSON**, wipe-all
+   behind a typed confirmation.
 
 Design: dark-first, thumb-reachable bottom nav, inputs at least 44 px tall, numeric keypads
 on number fields, no layout shift when the keyboard opens.
@@ -158,9 +193,10 @@ personal-gym/
     seed.js             ~120 seeded exercises
     calc.js             1RM, volume, PRs, trend, plate math  ← pure, fully tested
     charts.js           inline SVG line/bar
+    backup.js           serialise, encrypt (WebCrypto), gist push/pull
     ui/                 home, workout, history, exercise, routines, bodyweight, settings
   test/
-    calc.test.js  db-migrations.test.js  export-import.test.js
+    calc.test.js  db-migrations.test.js  backup.test.js
   README.md             how to run, install to phone, back up
 ```
 
@@ -175,17 +211,28 @@ personal-gym/
 | 5 | Exercise detail: charts, PRs, trend verdict | Seeded 6-month fixture produces the right up/flat/down calls |
 | 6 | Body weight, plate calculator, warm-up handling | Warm-ups provably absent from PRs and volume |
 | 7 | PWA: manifest, service worker, offline | Airplane mode, cold start, full session logged |
-| 8 | Export/import, backup nag, README | Export → wipe → import → byte-identical state |
+| 8 | Export/import, encrypted gist backup, README | Export → wipe → import → identical state; backup → restore round-trips |
 
 ## 7. Definition of done
 
 - `node --test personal-gym/test` passes; `node --check` passes on every JS file.
 - A full session can be logged start to finish in airplane mode.
 - Killing the browser mid-workout loses nothing.
-- Export → wipe → import restores the database exactly.
+- Export → wipe → import restores the database exactly, and so does gist restore.
 - Warm-up sets appear in history and nowhere else.
-- `grep -rE "fetch\(|XMLHttpRequest|WebSocket" personal-gym/js` returns nothing.
+- The only network call in `personal-gym/js` is the gist backup in `backup.js` —
+  greppable, and absent from every logging path.
+- No token, passphrase, or workout data is ever written to this repo.
 - `server.js` and the production API are byte-for-byte unchanged.
+
+## 9. Read this before you trust it
+
+- **On iPhone, deleting the home screen icon deletes the local database with it.** iOS ties
+  an installed web app's storage to its icon. There is no iCloud copy and no undo — the
+  gist backup is what saves you, which is why it is automatic.
+- Installed web apps are exempt from Safari's 7-day storage eviction, so a quiet week costs
+  you nothing. Storage can still be purged under severe device-storage pressure.
+- **A lost backup passphrase is unrecoverable.** Record it when you set it up.
 
 ## 8. Deployment
 
