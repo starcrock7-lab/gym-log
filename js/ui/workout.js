@@ -6,9 +6,13 @@ import {
   state, mutateActive, exerciseById, exerciseName, addExerciseToActive,
   finishWorkout, discardWorkout, startRest, lastPerformanceSession, saveRoutine, logBodyWeight,
 } from '../store.js';
-import { formatWeight, formatDuration, effectiveLoadLb, sessionTotals, workingSets, estimate1RM, personalRecords } from '../calc.js';
+import { formatWeight, formatDuration, sessionTotals, workingSets } from '../calc.js';
 import { normaliseSet } from '../schema.js';
-import { exercisePicker, plateSheet } from './pickers.js';
+import { exercisePicker } from './pickers.js';
+import { setRow, setSetLoggedHandler, resetPRAnnouncements } from './setrow.js';
+import { openTimerFullscreen } from './timer.js';
+
+export { resetPRAnnouncements };
 
 // Held so ticking a set can update the running total in place rather than
 // redrawing the screen out from under your thumb.
@@ -36,16 +40,28 @@ export function workoutScreen() {
 
   totalsNode = h('div', { class: 'muted small mono' });
   refreshTotals();
+  setSetLoggedHandler(refreshTotals);
 
   return screen(workout.name, {
     subtitle: null,
     action: h('button', { class: 'btn btn-primary btn-sm', onclick: () => finishSheet() }, 'Finish'),
   },
     h('div', { class: 'card card-tight spread' },
-      h('div', { class: 'row', style: { gap: '6px' } }, icon('timer'), elapsed),
+      h('button', {
+        class: 'row', style: { gap: '6px', background: 'none', border: 0, color: 'inherit', cursor: 'pointer', minHeight: '38px', padding: 0 },
+        'aria-label': 'Open the timer',
+        onclick: () => openTimerFullscreen(),
+      }, icon('timer'), elapsed),
       totalsNode,
       h('button', { class: 'icon-btn', 'aria-label': 'Workout options', onclick: () => optionsSheet() }, icon('grip')),
     ),
+
+    workout.entries.length
+      ? h('button', {
+          class: 'btn btn-primary btn-block btn-lg',
+          onclick: () => { location.hash = `#/focus/${firstUnfinished(workout)}`; },
+        }, icon('focus'), 'Focus mode — one exercise at a time')
+      : null,
 
     workout.entries.length
       ? workout.entries.map((entry, index) => exerciseCard(entry, index))
@@ -54,6 +70,12 @@ export function workoutScreen() {
     h('button', { class: 'btn btn-block', onclick: () => addExercise() }, icon('plus'), 'Add exercise'),
     h('button', { class: 'btn btn-ghost btn-block', onclick: () => cancelWorkout() }, 'Discard workout'),
   );
+}
+
+// Focus mode should open where the work is, not always at the top.
+function firstUnfinished(workout) {
+  const index = workout.entries.findIndex((entry) => entry.sets.some((set) => !set.done));
+  return index === -1 ? 0 : index;
 }
 
 // ---------------------------------------------------------------------------
@@ -71,6 +93,10 @@ function exerciseCard(entry, entryIndex) {
       h('h2', { class: 'truncate' },
         h('a', { href: `#/exercise/${entry.exerciseId}` }, exercise?.name || 'Unknown exercise')),
       exercise?.isBodyweight ? h('span', { class: 'pill' }, 'BW') : null,
+      h('button', {
+        class: 'icon-btn', 'aria-label': `Focus on ${exercise?.name || 'this exercise'}`,
+        onclick: () => { location.hash = `#/focus/${entryIndex}`; },
+      }, icon('focus')),
       h('button', { class: 'icon-btn', 'aria-label': 'Exercise options', onclick: () => entrySheet(entry, entryIndex) }, icon('grip')),
     ),
 
@@ -96,153 +122,6 @@ function exerciseCard(entry, entryIndex) {
       }, icon('plus'), 'Add set'),
     ),
   );
-}
-
-function setRow({ entry, entryIndex, set, setIndex, previous, exercise, bodyWeightLb }) {
-  const previousSet = previous?.sets?.[setIndex];
-  const isWarmup = set.type === 'warmup';
-
-  const weight = h('input', {
-    class: `set-input${set.done ? ' is-done' : ''}`, type: 'number', inputmode: 'decimal', step: '2.5', min: '0',
-    value: set.weightLb || '',
-    placeholder: previousSet ? formatWeight(previousSet.weightLb) : '0',
-    onfocus: (e) => e.target.select(),
-    onchange: (e) => write({ weightLb: Number(e.target.value) || 0 }),
-  });
-
-  const reps = h('input', {
-    class: `set-input${set.done ? ' is-done' : ''}`, type: 'number', inputmode: 'numeric', step: '1', min: '0',
-    value: set.reps || '',
-    placeholder: previousSet ? String(previousSet.reps) : '0',
-    onfocus: (e) => e.target.select(),
-    onchange: (e) => write({ reps: Math.max(0, Math.floor(Number(e.target.value) || 0)) }),
-  });
-
-  // Writing straight into the live object keeps the input's own DOM node
-  // untouched, so the caret does not jump while you are typing.
-  const write = (patch) => mutateActive((w) => Object.assign(w.entries[entryIndex].sets[setIndex], patch));
-
-  const done = h('button', {
-    class: `set-done${set.done ? ' on' : ''}`,
-    'aria-label': set.done ? 'Mark set not done' : 'Mark set done',
-    onclick: async () => {
-      const nowDone = !set.done;
-      // Ticking an untouched row takes whatever is showing, including the
-      // ghost numbers, so repeating last week is a single tap.
-      const weightLb = Number(weight.value) || (nowDone ? previousSet?.weightLb || 0 : 0);
-      const repCount = Number(reps.value) || (nowDone ? previousSet?.reps || 0 : 0);
-
-      // The row updates itself. A redraw here would rebuild the button you are
-      // still touching.
-      set.done = nowDone;
-      done.classList.toggle('on', nowDone);
-      weight.value = weightLb || '';
-      reps.value = repCount || '';
-      weight.classList.toggle('is-done', nowDone);
-      reps.classList.toggle('is-done', nowDone);
-
-      await mutateActive((w) => {
-        Object.assign(w.entries[entryIndex].sets[setIndex], {
-          weightLb, reps: repCount, done: nowDone, doneAt: nowDone ? new Date().toISOString() : null,
-        });
-      });
-      refreshTotals();
-
-      if (nowDone && !isWarmup) {
-        const rest = entry.restSec || exercise?.defaultRestSec || state.settings.defaultRestSec;
-        if (rest > 0) await startRest(rest, exercise?.name || '');
-        announcePR(entry.exerciseId, { weightLb, reps: repCount }, bodyWeightLb, exercise);
-      }
-    },
-  }, icon('check'));
-
-  return frag(
-    h('button', {
-      class: `set-no${isWarmup ? ' warmup' : ''}`,
-      'aria-label': 'Change set type',
-      onclick: () => setTypeSheet(entryIndex, setIndex),
-    }, isWarmup ? 'W' : String(workingSetNumber(entry.sets, setIndex))),
-
-    previousSet
-      ? h('button', {
-          class: 'ghost',
-          style: { background: 'none', border: 0, textAlign: 'left', padding: 0, cursor: 'pointer' },
-          onclick: () => { weight.value = previousSet.weightLb || ''; reps.value = previousSet.reps || ''; write({ weightLb: previousSet.weightLb, reps: previousSet.reps }); },
-        }, `${formatWeight(previousSet.weightLb)} × ${previousSet.reps}`)
-      : h('span', { class: 'ghost none' }, 'first time'),
-
-    weight,
-    reps,
-    done,
-  );
-}
-
-// Warm-ups do not consume a working set number — set 1 is your first real set.
-function workingSetNumber(sets, index) {
-  let n = 0;
-  for (let i = 0; i <= index; i += 1) if (sets[i].type !== 'warmup') n += 1;
-  return n;
-}
-
-// ---------------------------------------------------------------------------
-
-let lastAnnounced = new Set();
-
-function announcePR(exerciseId, set, bodyWeightLb, exercise) {
-  const finished = state.workouts.filter((w) => w.finishedAt);
-  const prs = personalRecords(finished, exercise || exerciseId);
-  const load = effectiveLoadLb(set, exercise, bodyWeightLb);
-  const est = estimate1RM(load, set.reps);
-  if (!est || !prs.heaviest) return;
-
-  const key = `${exerciseId}:${load}:${set.reps}`;
-  if (lastAnnounced.has(key)) return;
-
-  if (load > prs.heaviest.loadLb) {
-    lastAnnounced.add(key);
-    toast(`Heaviest ever on ${exercise?.name || 'this lift'} — ${formatWeight(load)} lb`);
-  } else if (prs.bestE1RM && est.confidence !== 'low' && est.value > prs.bestE1RM.value) {
-    lastAnnounced.add(key);
-    toast(`Best estimated 1RM on ${exercise?.name || 'this lift'} — ${formatWeight(est.value)} lb`);
-  }
-}
-
-export function resetPRAnnouncements() { lastAnnounced = new Set(); }
-
-// ---------------------------------------------------------------------------
-
-function setTypeSheet(entryIndex, setIndex) {
-  const set = state.active.entries[entryIndex].sets[setIndex];
-  const choose = (type) => { mutateActive((w) => { w.entries[entryIndex].sets[setIndex].type = type; }, { redraw: true }); closeSheet(); };
-
-  sheet('Set type', frag(
-    h('div', { class: 'list' },
-      [
-        ['working', 'Working set', 'Counts toward volume, records and charts'],
-        ['warmup', 'Warm-up', 'Logged, but never counts toward a record'],
-        ['drop', 'Drop set', 'Counts as working'],
-        ['failure', 'To failure', 'Counts as working'],
-      ].map(([type, title, note]) =>
-        h('button', { class: 'list-item', onclick: () => choose(type) },
-          h('div', { class: 'grow' }, h('div', {}, title), h('div', { class: 'muted small' }, note)),
-          set.type === type ? icon('check') : null)),
-    ),
-    h('button', {
-      class: 'btn btn-block',
-      onclick: () => { plateSheet(set.weightLb); },
-    }, 'Plate calculator'),
-    h('button', {
-      class: 'btn btn-danger btn-block',
-      onclick: () => {
-        mutateActive((w) => {
-          const sets = w.entries[entryIndex].sets;
-          sets.splice(setIndex, 1);
-          if (!sets.length) sets.push(normaliseSet({}));
-        }, { redraw: true });
-        closeSheet();
-      },
-    }, 'Delete set'),
-  ));
 }
 
 function entrySheet(entry, entryIndex) {

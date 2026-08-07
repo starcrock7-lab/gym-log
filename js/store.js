@@ -58,8 +58,9 @@ export async function init() {
   state.settings = { ...defaultSettings(), ...(settings || {}) };
   state.backup = { ...defaultBackupState(), ...(backup || {}) };
   state.active = active || null;
-  // A rest timer that expired while the app was closed is simply over.
-  state.rest = rest && rest.endsAt > Date.now() ? rest : null;
+  // A countdown that ran out while the app was closed is simply over. A paused
+  // one is not — it was waiting for you, and it still is.
+  state.rest = rest && (rest.remainingMs != null || rest.endsAt > Date.now()) ? rest : null;
 
   if (!state.exercises.length) await seedLibrary();
 
@@ -366,23 +367,68 @@ export async function saveBackupState(patch) {
   return state.backup;
 }
 
-// Stored as an end timestamp rather than a countdown, so backgrounding the app,
-// locking the phone, or a slow tab all leave the remaining time correct.
+// The timer stores when it *ends*, not how much is left, so backgrounding the
+// app, locking the phone or a throttled tab all leave the remaining time
+// correct. While paused it stores the remaining milliseconds instead, and
+// `endsAt` is recomputed on resume.
+//
+// None of these notify: the timer paints itself on its own interval, and a
+// redraw would rebuild the workout screen under your thumb.
 export async function startRest(durationSec, label = '') {
-  state.rest = { endsAt: Date.now() + durationSec * 1000, durationSec, label };
+  state.rest = { endsAt: Date.now() + durationSec * 1000, durationSec, label, remainingMs: null };
   await db.setKv('rest', state.rest);
-  notify();
 }
 
 export async function adjustRest(deltaSec) {
   if (!state.rest) return;
-  state.rest = { ...state.rest, endsAt: state.rest.endsAt + deltaSec * 1000 };
+  const rest = state.rest;
+  if (rest.remainingMs != null) {
+    state.rest = { ...rest, remainingMs: Math.max(0, rest.remainingMs + deltaSec * 1000) };
+  } else {
+    // Never let +15 on an expired timer resurrect it from far in the past.
+    const from = Math.max(rest.endsAt, Date.now());
+    state.rest = { ...rest, endsAt: from + deltaSec * 1000 };
+  }
+  // Adding time past the original duration should grow the ring, not overflow it.
+  const span = restTotalMs(state.rest);
+  if (span > state.rest.durationSec * 1000) state.rest.durationSec = Math.ceil(span / 1000);
   await db.setKv('rest', state.rest);
-  notify();
+}
+
+function restTotalMs(rest) {
+  return rest.remainingMs != null ? rest.remainingMs : Math.max(0, rest.endsAt - Date.now());
+}
+
+export async function pauseRest() {
+  if (!state.rest || state.rest.remainingMs != null) return;
+  state.rest = { ...state.rest, remainingMs: Math.max(0, state.rest.endsAt - Date.now()), endsAt: null };
+  await db.setKv('rest', state.rest);
+}
+
+export async function resumeRest() {
+  if (!state.rest || state.rest.remainingMs == null) return;
+  state.rest = { ...state.rest, endsAt: Date.now() + state.rest.remainingMs, remainingMs: null };
+  await db.setKv('rest', state.rest);
+}
+
+export async function resetRest() {
+  if (!state.rest) return;
+  const { durationSec, label } = state.rest;
+  state.rest = { endsAt: Date.now() + durationSec * 1000, durationSec, label, remainingMs: null };
+  await db.setKv('rest', state.rest);
 }
 
 export async function stopRest() {
   state.rest = null;
   await db.deleteKv('rest');
-  notify();
+}
+
+export function restRemainingMs(now = Date.now()) {
+  const rest = state.rest;
+  if (!rest) return 0;
+  return rest.remainingMs != null ? rest.remainingMs : Math.max(0, rest.endsAt - now);
+}
+
+export function restIsPaused() {
+  return Boolean(state.rest && state.rest.remainingMs != null);
 }

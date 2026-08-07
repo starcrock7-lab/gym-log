@@ -68,8 +68,12 @@ keep serving the old version forever.
   while focus is moving to whatever you tapped next, destroying that control before its
   click is dispatched. The tap vanishes. Value edits persist silently and the row updates
   its own node; only structural changes redraw.
-- **The rest timer stores an end timestamp**, not a countdown, so locking the phone
-  mid-set cannot desynchronise it.
+- **The timer stores an end timestamp**, not a countdown, so locking the phone mid-set
+  cannot desynchronise it. Paused, it stores the remaining milliseconds instead and
+  recomputes the end on resume — which is why a paused timer survives a reload but an
+  expired one does not.
+- **Focus mode and the list view share one set row** (`js/ui/setrow.js`). Two copies of
+  "log a set" would drift, and the drift would be silent.
 
 ### The numbers
 
@@ -89,6 +93,35 @@ All of it lives in `js/calc.js` as pure functions, and all of it is tested.
   quietly rounding. 192.5 lb on a 45 lb bar needs 1.25s, and it will tell you so.
 
 ---
+
+## Two ways to run a workout
+
+**List view** (`#/workout`) shows every exercise at once — good for skimming ahead or
+reordering.
+
+**Focus mode** (`#/focus/0`) gives one exercise the whole screen: bigger set rows, last
+session's numbers in a panel above them, and a Next button naming the lift that follows.
+It opens on the first exercise with work left rather than always at the top, the pips
+across the top show what is done, and the list icon returns you to the full view. The tab
+bar is hidden here on purpose — mid-set is not the moment to accidentally open Settings.
+
+**The timer** runs as a compact bar while you log. Tap the digits to fill the screen:
+a ring, huge readable digits, six presets, ±15s, and pause/resume. It also opens from the
+stopwatch icon on either workout screen, so it works as a plain timer with no rest
+attached. On Android and desktop it takes real fullscreen too; iPhone Safari has no
+Fullscreen API, so the overlay is the mechanism and the native call is a bonus.
+
+## Sharing it with friends
+
+Send them the URL. IndexedDB is scoped per device and per browser, so every person who
+opens it gets their own database — separate workouts, separate routines, separate records.
+There is no server holding a shared pile of data, so there is nothing to keep apart.
+
+The exception is two people using the same phone and browser: they would share one
+database. There are no profiles yet.
+
+Each person sets up their own backup with their own GitHub token. Nothing about backup is
+shared between installs.
 
 ## Backing up
 

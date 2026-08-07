@@ -118,6 +118,7 @@ export function icon(name) {
     plus: 'M12 5v14M5 12h14',
     check: 'M20 6 9 17l-5-5',
     back: 'm15 18-6-6 6-6',
+    forward: 'm9 18 6-6-6-6',
     trash: 'M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6M10 11v6M14 11v6',
     timer: 'M12 22a8 8 0 1 0 0-16 8 8 0 0 0 0 16ZM12 10v4l2 2M9 2h6',
     up: 'm5 15 7-7 7 7',
@@ -127,6 +128,7 @@ export function icon(name) {
     close: 'M18 6 6 18M6 6l12 12',
     edit: 'M12 20h9M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z',
     grip: 'M9 5h.01M9 12h.01M9 19h.01M15 5h.01M15 12h.01M15 19h.01',
+    focus: 'M4 8V5a1 1 0 0 1 1-1h3M16 4h3a1 1 0 0 1 1 1v3M20 16v3a1 1 0 0 1-1 1h-3M8 20H5a1 1 0 0 1-1-1v-3M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z',
     cloud: 'M17.5 19a4.5 4.5 0 0 0 .5-9 6 6 0 0 0-11.6-1.5A4 4 0 0 0 6.5 19Z',
   };
   const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
