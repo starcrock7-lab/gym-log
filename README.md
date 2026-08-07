@@ -145,6 +145,29 @@ half-loading it over a working history.
 Installed web apps are exempt from Safari's 7-day storage eviction, so a quiet week costs
 you nothing. Storage can still be purged under severe device-storage pressure.
 
+## Where the look comes from
+
+Ported from the real design system in `starcrock7-lab/gymgear-frontend5`
+(`src/app/globals.css` plus its components), not from a guess:
+
+| Token | Site | Here |
+|---|---|---|
+| ground / raised surface | `--off #081124` / `--card #0f1d3d` | same |
+| text, three levels | `--ink` / `--ink-2` / `--ink-3` | same |
+| hairline | `--line` white at 12% | same |
+| success | `--win #2fbf62` | same |
+| accent ramp | `#f0531e` orange | `#1e76f0` — the same hue rotated to blue at identical saturation and lightness, so the ramp keeps its relationships |
+| type | Inter body, Space Grotesk display | same, self-hosted |
+| radii | `rounded-lg`/`xl`/`2xl` | 8 / 12 / 16 / 22px |
+| micro-labels | `text-[0.6rem] font-bold uppercase tracking-[0.2em]` | same |
+
+Also carried over: the 54px grid overlay behind the page, and the accent glow on
+primary actions.
+
+Inter and Space Grotesk are **self-hosted** in `fonts/` (latin subset, variable,
+70 KB the pair) and cached by the service worker. Loading them from Google would
+have meant the app looked wrong in airplane mode, which is where it gets used.
+
 ## Privacy
 
 The code is public; the data is not. Everything is written to IndexedDB on your device.

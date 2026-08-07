@@ -58,9 +58,10 @@ const hex = (value) => [
 
 function draw(size, { padding = 0 } = {}) {
   const pixels = Buffer.alloc(size * size * 4);
-  const bg = hex('#0d1117');
-  const panel = hex('#161b22');
-  const accent = hex('#3b82f6');
+  // Matches the app palette: --off ground, --card panel, blue --accent.
+  const bg = hex('#081124');
+  const panel = hex('#0f1d3d');
+  const accent = hex('#1e76f0');
 
   // Everything the eye should read sits inside `inset`, which leaves the
   // maskable safe zone clear when a launcher crops the corners.
