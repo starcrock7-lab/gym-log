@@ -11,6 +11,7 @@ import { mountTimer, repaintTimer } from './ui/timer.js';
 import { historyScreen, sessionScreen } from './ui/history.js';
 import { exerciseListScreen, exerciseScreen } from './ui/exercises.js';
 import { routinesScreen, routineScreen } from './ui/routines.js';
+import { importScreen } from './ui/share.js';
 import { bodyScreen } from './ui/body.js';
 import { settingsScreen } from './ui/settings.js';
 
@@ -26,6 +27,7 @@ const ROUTES = [
   [/^\/exercise\/(.+)$/, (id) => exerciseScreen(id)],
   [/^\/routines$/, () => routinesScreen()],
   [/^\/routine\/(.+)$/, (id) => routineScreen(id)],
+  [/^\/import\/(.+)$/, (code) => importScreen(code)],
   [/^\/body$/, () => bodyScreen()],
   [/^\/settings$/, () => settingsScreen()],
 ];

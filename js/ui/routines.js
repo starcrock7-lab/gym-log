@@ -1,6 +1,7 @@
 import { h, frag, icon, screen, empty, sheet, closeSheet, confirmSheet, toast } from '../dom.js';
 import { state, routineById, exerciseName, saveRoutine, removeRoutine } from '../store.js';
 import { exercisePicker } from './pickers.js';
+import { shareRoutineSheet, pasteSplitSheet } from './share.js';
 
 export function routinesScreen() {
   const routines = [...state.routines].sort((a, b) => a.position - b.position);
@@ -12,13 +13,18 @@ export function routinesScreen() {
   },
     routines.length
       ? routines.map((routine) =>
-          h('a', { class: 'card card-link', href: `#/routine/${routine.id}` },
+          h('div', { class: 'card' },
             h('div', { class: 'spread' },
-              h('div', { class: 'grow' },
+              h('a', { class: 'grow', href: `#/routine/${routine.id}`, style: { color: 'inherit', textDecoration: 'none' } },
                 h('div', {}, routine.name),
                 h('div', { class: 'muted small' }, `${routine.exercises.length} ${routine.exercises.length === 1 ? 'exercise' : 'exercises'}`),
               ),
-              icon('edit'),
+              h('button', {
+                class: 'icon-btn', 'aria-label': `Share ${routine.name}`,
+                disabled: !routine.exercises.length,
+                onclick: () => shareRoutineSheet(routine),
+              }, icon('share')),
+              h('a', { class: 'icon-btn', href: `#/routine/${routine.id}`, 'aria-label': `Edit ${routine.name}` }, icon('edit')),
             ),
             routine.exercises.length
               ? h('p', { class: 'muted small truncate', style: { marginTop: '6px' } },
@@ -28,6 +34,7 @@ export function routinesScreen() {
       : empty('No routines yet', 'A routine is just a list of exercises you reuse.'),
 
     h('button', { class: 'btn btn-primary btn-block', onclick: () => createRoutine() }, icon('plus'), 'New routine'),
+    h('button', { class: 'btn btn-block', onclick: () => pasteSplitSheet() }, icon('forward'), 'Add a split someone sent me'),
   );
 }
 
@@ -88,6 +95,12 @@ export function routineScreen(id) {
           },
         }),
       }, icon('plus'), 'Add exercise'),
+
+      h('button', {
+        class: 'btn btn-block',
+        disabled: !draft.exercises.length,
+        onclick: () => shareRoutineSheet(draft),
+      }, icon('share'), 'Share this split'),
 
       h('button', {
         class: 'btn btn-danger btn-block',

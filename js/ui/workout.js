@@ -3,7 +3,7 @@
 
 import { h, frag, icon, screen, sheet, closeSheet, confirmSheet, toast, empty } from '../dom.js';
 import {
-  state, mutateActive, exerciseById, exerciseName, addExerciseToActive,
+  state, mutateActive, exerciseById, exerciseName, addExerciseToActive, addSetToActive,
   finishWorkout, discardWorkout, startRest, lastPerformanceSession, saveRoutine, logBodyWeight,
 } from '../store.js';
 import { formatWeight, formatDuration, sessionTotals, workingSets } from '../calc.js';
@@ -111,15 +111,15 @@ function exerciseCard(entry, entryIndex) {
       rows,
     ),
 
-    h('div', { class: 'row', style: { padding: '0 10px 10px', gap: '8px' } },
+    h('div', { class: 'row', style: { padding: '0 11px 12px', gap: '8px' } },
       h('button', {
         class: 'btn btn-sm grow',
-        onclick: () => mutateActive((w) => {
-          const sets = w.entries[entryIndex].sets;
-          const last = sets[sets.length - 1];
-          sets.push(normaliseSet({ weightLb: last?.weightLb || 0, reps: last?.reps || 0, type: 'working' }));
-        }, { redraw: true }),
+        onclick: () => addSetToActive(entryIndex),
       }, icon('plus'), 'Add set'),
+      h('button', {
+        class: 'btn btn-sm grow',
+        onclick: () => addSetToActive(entryIndex, { type: 'drop' }),
+      }, icon('down'), `Drop set −${state.settings.dropPercent}%`),
     ),
   );
 }

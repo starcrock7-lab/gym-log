@@ -4,9 +4,8 @@
 // on the live workout, not a second copy of it.
 
 import { h, frag, icon, empty, toast, confirmSheet } from '../dom.js';
-import { state, mutateActive, exerciseById, lastPerformanceSession } from '../store.js';
+import { state, exerciseById, lastPerformanceSession, addSetToActive } from '../store.js';
 import { formatWeight, formatDuration, sessionTotals, workingSets } from '../calc.js';
-import { normaliseSet } from '../schema.js';
 import { setRow } from './setrow.js';
 import { openTimerFullscreen } from './timer.js';
 
@@ -87,14 +86,13 @@ export function focusScreen(rawIndex) {
           })),
       ),
 
-      h('button', {
-        class: 'btn btn-block',
-        onclick: () => mutateActive((w) => {
-          const sets = w.entries[index].sets;
-          const last = sets[sets.length - 1];
-          sets.push(normaliseSet({ weightLb: last?.weightLb || 0, reps: last?.reps || 0, type: 'working' }));
-        }, { redraw: true }),
-      }, icon('plus'), 'Add set'),
+      h('div', { class: 'row', style: { gap: '9px' } },
+        h('button', { class: 'btn grow', onclick: () => addSetToActive(index) }, icon('plus'), 'Add set'),
+        h('button', {
+          class: 'btn grow',
+          onclick: () => addSetToActive(index, { type: 'drop' }),
+        }, icon('down'), `Drop −${state.settings.dropPercent}%`),
+      ),
 
       h('p', { class: 'dim small center' },
         `${totals.sets} sets · ${Math.round(totals.volumeLb).toLocaleString('en-US')} lb so far`),

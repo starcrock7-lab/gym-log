@@ -11,6 +11,7 @@ import {
   normaliseExercise, normaliseRoutine, normaliseWorkout, normaliseSet,
 } from './schema.js';
 import { SEED_EXERCISES, SEED_ROUTINES } from './seed.js';
+import { roundToStep } from './calc.js';
 
 export const state = {
   ready: false,
@@ -275,6 +276,50 @@ export async function addExerciseToActive(exerciseId) {
         ? previous.slice(0, 4).map((s) => normaliseSet({ weightLb: s.weightLb, reps: s.reps, type: s.type }))
         : [normaliseSet({})],
     });
+  }, { redraw: true });
+}
+
+// Adding a set, whatever kind.
+//
+// A drop set drops from the last working weight you actually *put on the bar*,
+// not from the last working row — a routine pre-creates its rows empty, so
+// "the last working set" is usually a blank one and dropping 20% off it gives
+// you zero. It is also inserted right after the set you just finished rather
+// than at the bottom, because that is where you are standing.
+export async function addSetToActive(entryIndex, { type = 'working' } = {}) {
+  await mutateActive((w) => {
+    const sets = w.entries[entryIndex].sets;
+    const previous = sets[sets.length - 1];
+
+    if (type === 'drop') {
+      const loaded = [...sets].reverse();
+      const base =
+        loaded.find((s) => (s.type === 'working' || s.type === 'failure') && s.weightLb > 0)?.weightLb ??
+        loaded.find((s) => s.weightLb > 0)?.weightLb ??
+        0;
+      const pct = Number(state.settings.dropPercent) || 20;
+      const drop = normaliseSet({
+        weightLb: roundToStep(base * (1 - pct / 100)),
+        reps: 0,
+        type: 'drop',
+      });
+
+      // Straight after the last set you ticked, or at the end if none yet.
+      let at = sets.length;
+      for (let i = sets.length - 1; i >= 0; i -= 1) {
+        if (sets[i].done) { at = i + 1; break; }
+      }
+      // Keep consecutive drops in order rather than stacking them backwards.
+      while (at < sets.length && sets[at].type === 'drop') at += 1;
+      sets.splice(at, 0, drop);
+      return;
+    }
+
+    sets.push(normaliseSet({
+      weightLb: previous?.weightLb || 0,
+      reps: previous?.reps || 0,
+      type,
+    }));
   }, { redraw: true });
 }
 

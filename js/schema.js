@@ -44,6 +44,7 @@ export function defaultSettings() {
   return {
     unit: 'lb',
     defaultRestSec: 120,
+    dropPercent: 20,
     barWeightLb: 45,
     plates: [45, 35, 25, 10, 5, 2.5],
     vibrate: true,

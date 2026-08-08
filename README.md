@@ -111,6 +111,39 @@ stopwatch icon on either workout screen, so it works as a plain timer with no re
 attached. On Android and desktop it takes real fullscreen too; iPhone Safari has no
 Fullscreen API, so the overlay is the mechanism and the native call is a bonus.
 
+## Drop sets
+
+Tap **Drop set −20%** on any exercise. It appears straight after the set you just
+ticked, pre-loaded at 20% below your last real working weight (adjustable in
+Settings), badged **D**, and it does not start a rest timer — a drop is taken off
+the back of the set before it, which is the point.
+
+Drop sets count as working sets: they are in your volume and can set records.
+They just don't take a set number of their own, so the column reads `1 D 2 3`.
+
+## Sharing your split
+
+Routines → the share icon, or **Share this split** in the routine editor. You get
+a link (~800 characters) to send however you like.
+
+**The link carries the plan, never your numbers.** Exercises, set counts, rep
+ranges, rest. When your friend runs it, the weights they see are their own,
+pulled from their own history by the same code that fills ghost text anywhere
+else. Sending someone your working weights would be worse than useless.
+
+On their side the import screen previews the split before anything is saved,
+marking each exercise **Yours** or **New**, and showing their last numbers for
+the ones they have done. Importing is purely additive: it creates a routine and
+any exercises they lack, and can never touch their history. A shared split whose
+name clashes with one of theirs gets a `(shared)` suffix.
+
+Exercises are matched by id first and then by name, ignoring case and
+punctuation. That name fallback is what attaches a shared split to history they
+already have under a differently-generated id — without it a friend's
+"Incline Machine Press" would arrive as an empty duplicate.
+
+Receiving without a link: Routines → **Add a split someone sent me**, paste.
+
 ## Sharing it with friends
 
 Send them the URL. IndexedDB is scoped per device and per browser, so every person who

@@ -267,6 +267,8 @@ textarea.input { min-height: 76px; resize: vertical; }
   font-family: 'Space Grotesk', sans-serif;
 }
 .set-no.warmup { background: var(--warn-soft); border-color: transparent; color: var(--warn); }
+/* A drop set reads as hanging off the set above it rather than standing alone. */
+.set-no.drop { background: color-mix(in srgb, var(--accent) 16%, transparent); border-color: transparent; color: var(--accent); }
 
 .ghost { color: var(--ink-3); font-size: 0.84rem; font-variant-numeric: tabular-nums; padding-left: 2px; }
 .ghost.none { font-style: italic; opacity: 0.6; }
