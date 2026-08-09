@@ -225,6 +225,12 @@ show a numeric keypad. Nothing may shift under a thumb mid-set.
 - **`node --test` needs the glob**, not the directory: `node --test test/*.test.js`.
 - **A 90-second preset is `1:30`, not `1.5:30`.** Format durations through the
   shared helper; naive `seconds/60` has bitten this file before.
+- **Finishing a workout is what creates the "last time" numbers.**
+  `lastPerformanceSession` walks `finishedWorkouts()`, so a session that is never
+  finished never becomes the prefill or the ghost text on the next one. That made
+  a missing Finish affordance look exactly like a broken history feature — keep
+  finishing obvious, and don't let Discard be the only action at the foot of the
+  workout screen.
 - **`platesFor` is allowed to say no.** 192.5 lb on a 45 lb bar needs 1.25s. It
   reports the shortfall rather than rounding. Don't "fix" that.
 

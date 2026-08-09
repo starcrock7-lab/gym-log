@@ -26,15 +26,24 @@ export function homeScreen() {
       state.routines.length
         ? h('div', { class: 'stack-sm' },
             [...state.routines].sort((a, b) => a.position - b.position).map((routine) =>
-              h('button', { class: 'card card-tight spread', style: { textAlign: 'left', cursor: 'pointer' }, onclick: () => begin({ routineId: routine.id }) },
+              // The row is deliberately not itself a button. Tapping a routine to
+              // read what was in it used to start the workout underneath you.
+              h('div', { class: 'card card-tight spread' },
                 h('div', { class: 'grow' },
-                  h('div', {}, routine.name),
+                  h('div', { class: 'row', style: { gap: '7px' } },
+                    h('span', { class: 'truncate' }, routine.name),
+                    h('span', { class: 'pill' }, `${routine.exercises.length}`),
+                  ),
                   h('div', { class: 'muted small truncate' },
                     routine.exercises.length
                       ? routine.exercises.map((e) => exerciseName(e.exerciseId)).join(' · ')
                       : 'No exercises yet'),
                 ),
-                h('span', { class: 'pill pill-accent' }, `${routine.exercises.length}`),
+                h('button', {
+                  class: 'btn btn-primary btn-sm',
+                  'aria-label': `Start ${routine.name}`,
+                  onclick: () => begin({ routineId: routine.id }),
+                }, 'Start'),
               )),
           )
         : empty('No routines yet', 'Create one from the Routines screen.'),

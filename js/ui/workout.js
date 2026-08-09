@@ -68,6 +68,17 @@ export function workoutScreen() {
       : empty('Nothing added yet', 'Add your first exercise below.'),
 
     h('button', { class: 'btn btn-block', onclick: () => addExercise() }, icon('plus'), 'Add exercise'),
+
+    // Finishing is what moves a session into history, and history is where the
+    // "last time" numbers come from — so it cannot live only in a small top-bar
+    // button. The bottom of this screen used to offer Discard and nothing else.
+    workout.entries.length
+      ? h('button', {
+          class: 'btn btn-finish btn-block btn-lg',
+          onclick: () => finishSheet(),
+        }, icon('check'), 'Finish workout')
+      : null,
+
     h('button', { class: 'btn btn-ghost btn-block', onclick: () => cancelWorkout() }, 'Discard workout'),
   );
 }
