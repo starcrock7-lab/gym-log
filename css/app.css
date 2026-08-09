@@ -355,6 +355,10 @@ a { color: var(--accent-lift); }
   background: transparent; border: 0; color: var(--ink-2); cursor: pointer; border-radius: var(--r);
 }
 .icon-btn:active { background: rgba(255, 255, 255, 0.07); }
+/* Destructive, so it reads as destructive rather than hiding as another glyph.
+   Muted until touched — it sits in the top bar for the whole workout. */
+.icon-btn-danger { color: color-mix(in srgb, var(--bad) 78%, var(--ink-3)); }
+.icon-btn-danger:active { background: var(--bad-soft); color: var(--bad); }
 .icon { width: 20px; height: 20px; flex: none; }
 
 /* --- inputs ------------------------------------------------------------- */

@@ -44,6 +44,16 @@ export function workoutScreen() {
 
   return screen(workout.name, {
     subtitle: null,
+    // Discard belongs at the top, because the moment you want it is the moment
+    // you started this by accident — not after scrolling past every exercise to
+    // the foot of the screen. It sits on the left, deliberately the opposite end
+    // from Finish, so a fumbled tap cannot hit the other one.
+    back: h('button', {
+      class: 'icon-btn icon-btn-danger',
+      'aria-label': 'Discard workout',
+      title: 'Discard workout',
+      onclick: () => cancelWorkout(),
+    }, icon('trash')),
     action: h('button', { class: 'btn btn-primary btn-sm', onclick: () => finishSheet() }, 'Finish'),
   },
     h('div', { class: 'card card-tight spread' },

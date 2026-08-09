@@ -151,7 +151,11 @@ export function icon(name) {
 export function screen(title, { back = null, action = null, subtitle = null } = {}, ...body) {
   return frag(
     h('header', { class: 'topbar' },
-      back ? h('button', { class: 'icon-btn', 'aria-label': 'Back', onclick: () => { location.hash = back; } }, icon('back')) : null,
+      // `back` is normally a hash to navigate to. A screen that needs something
+      // other than "go back" in the leading slot can pass its own node instead.
+      back instanceof Node
+        ? back
+        : back ? h('button', { class: 'icon-btn', 'aria-label': 'Back', onclick: () => { location.hash = back; } }, icon('back')) : null,
       h('div', { class: 'topbar-titles' },
         h('h1', {}, title),
         subtitle ? h('p', { class: 'topbar-sub' }, subtitle) : null,
