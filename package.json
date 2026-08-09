@@ -1,0 +1,14 @@
+{
+  "name": "gym-log",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Personal workout tracker. Offline-first PWA, one user per device, no server, no accounts.",
+  "type": "module",
+  "scripts": {
+    "test": "node --test test/*.test.js",
+    "serve": "python -m http.server 8099"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}

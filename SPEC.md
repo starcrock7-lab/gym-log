@@ -1,7 +1,14 @@
 # Personal Gym Log — spec & build plan
 
-A single-user workout tracker, Strong-style, offline-first, living in `personal-gym/`.
-Completely separate from the `gymgearcompare.com` API. **`server.js` is never touched.**
+A single-user workout tracker, Strong-style, offline-first.
+
+> **Historical document.** This is the spec the app was built from, kept as written.
+> It was drafted when the app lived in a `personal-gym/` folder inside the
+> `GYMGEAR-BACKEND5` repo, so it talks about staying clear of that repo's `server.js`
+> and about paths like `personal-gym/test`. The app moved to its own repo on
+> 2026-08-08 and now sits at the root — read those paths accordingly. The design
+> decisions below still hold; `CLAUDE.md` is the current source of truth for how to
+> work on it.
 
 ---
 

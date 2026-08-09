@@ -4,8 +4,7 @@ A personal workout tracker. One user, no accounts, no server, no signal needed.
 Strong-style logging: every set row shows what you did last session, so the number to beat
 is on screen before you lift.
 
-Lives entirely in this folder. It has nothing to do with the `gymgearcompare.com` API in
-`server.js` and never touches it.
+The whole app is this repo: static files, no build step, no dependencies, no backend.
 
 ---
 
@@ -16,13 +15,12 @@ to run otherwise, and without one there is no offline mode.
 
 **GitHub Pages** is the least effort, since this repo is already public:
 
-1. Open <https://github.com/starcrock7-lab/GYMGEAR-BACKEND5/settings/pages>.
+1. Open <https://github.com/starcrock7-lab/gym-log/settings/pages>.
    This is the **repository's** settings, not your account's — account settings has no
    Pages section and GitHub redirects you to the docs, which is the usual wrong turn.
-2. Source **Deploy from a branch**, branch **whichever branch holds this folder**, folder
-   **`/ (root)`**, then Save. Picking `main` before the app is merged there gives a 404.
+2. Source **Deploy from a branch**, branch **`main`**, folder **`/ (root)`**, then Save.
 3. Wait a minute or two, then open
-   <https://starcrock7-lab.github.io/GYMGEAR-BACKEND5/personal-gym/> on your phone.
+   <https://starcrock7-lab.github.io/gym-log/> on your phone.
 4. **iPhone:** Safari → Share → *Add to Home Screen*.
    **Android:** Chrome → menu → *Install app*.
 
@@ -32,12 +30,20 @@ them. Deleting it will eventually break something in a way that is annoying to d
 It now launches fullscreen from your home screen, with no browser chrome, and works in
 airplane mode.
 
-Vercel, Netlify or any other static host works the same way — point it at `personal-gym/`.
+Vercel, Netlify or any other static host works the same way — point it at the repo root.
+
+### Coming from the old address
+
+This app used to live at `…github.io/GYMGEAR-BACKEND5/personal-gym/`. That is a different
+URL path, so an install from back then keeps its own service worker and its own IndexedDB —
+**your history does not follow you across.** To bring it over: open the old install,
+Settings → export a backup, then import that file into the new one. Once it is across,
+delete the old home-screen icon.
 
 ## Run it locally
 
 ```sh
-npx serve personal-gym      # or: python3 -m http.server 8099 --directory personal-gym
+npm run serve      # static server on :8099; or: npx serve .
 ```
 
 `localhost` counts as a secure origin, so the service worker works there too.
@@ -45,7 +51,7 @@ npx serve personal-gym      # or: python3 -m http.server 8099 --directory person
 ## Tests
 
 ```sh
-node --test personal-gym/test/*.test.js
+npm test
 ```
 
 Covers everything that decides a number: 1RM estimates, volume, personal records, the

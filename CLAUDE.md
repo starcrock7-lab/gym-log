@@ -1,33 +1,34 @@
 # Gym Log — working notes
 
 Personal workout tracker. Offline-first PWA, one user per device, no server, no
-accounts. Lives entirely in `personal-gym/`.
+accounts. This repo is the whole app.
 
-Claude Code loads this file automatically when the working directory is inside
-`personal-gym/`. Read `README.md` next to it for what the app does from a user's
-point of view; this file is about changing it safely.
+Read `README.md` for what the app does from a user's point of view, and `SPEC.md`
+for what it was built to be; this file is about changing it safely.
+
+**History note.** This app was built inside `starcrock7-lab/GYMGEAR-BACKEND5`
+under `personal-gym/` and moved out on 2026-08-08, history intact, because it has
+nothing to do with that Express API. Older commit messages mention that repo and
+its rules (`server.js`, the price catalogue, the `claude/personal-gym-app-*`
+branch) — none of that applies here any more.
 
 ---
 
 ## First: the rules that keep this repo working
 
-This folder sits inside **GYMGEAR-BACKEND5**, which is the production Express API
-for gymgearcompare.com. The repo's root `CLAUDE.md` governs everything outside
-this folder. Two of its rules bite here:
+1. **The repo is public. Never commit a secret.** No tokens, no keys, no workout
+   data. The gist backup token lives in the user's browser only, never on disk
+   here.
+2. **Never add a runtime dependency.** See below — it would have to be vendored
+   to survive offline, which is the whole point of the app.
 
-1. **Never touch `server.js`.** The gym app has nothing to do with the API. If a
-   change seems to need `server.js`, it doesn't — stop and ask.
-2. **The repo is public. Never commit a secret.** No tokens, no keys, no
-   workout data. The backup token lives in the user's browser only.
-
-Also: git email must be `starcrock7@gmail.com`, and work goes on the branch
-`claude/personal-gym-app-3amkjn` unless told otherwise.
+Git email must be `starcrock7@gmail.com`.
 
 ## Verify after every change
 
 ```sh
-npm run test:gym                                    # from the repo root
-for f in $(find personal-gym -name '*.js'); do node --check "$f"; done
+npm test                                            # 92 tests, node --test
+for f in $(find js test scripts -name '*.js'); do node --check "$f"; done
 ```
 
 There is no build step and no bundler. Zero runtime dependencies — keep it that
@@ -38,11 +39,10 @@ way; a dependency here would have to be vendored to survive offline.
 otherwise. This is the single most common way to ship a change that appears not
 to work. Add new files to the `SHELL` list in `sw.js` too, or they 404 offline.
 
-To see it: `python3 -m http.server 8099 --directory personal-gym`, then drive it
-with Playwright (Chromium is at `/opt/pw-browsers/chromium-*/chrome-linux/chrome`
-in the cloud sandbox; locally just open it). UI changes are not verified until
-they have actually been run in a browser — several bugs in this app's history
-looked completely fine in the source.
+To see it: `npm run serve` (a plain static server on :8099 — the app needs no
+build), then drive it in a browser. UI changes are not verified until they have
+actually been run in one; several bugs in this app's history looked completely
+fine in the source.
 
 ---
 
@@ -150,6 +150,16 @@ history or settings. Exercises are matched by id, then by normalised name — th
 name fallback is what attaches a shared split to history the receiver already has
 under a differently-generated id. There is a test for that; don't remove it.
 
+### `personal-gym` is a frozen name, not a stale one
+
+`DB_NAME = 'personal-gym'` and `EXPORT_FORMAT = 'personal-gym-export'` in
+`schema.js` are the old folder's name, and they stay that way. They are not
+paths — they identify a user's data. Renaming `DB_NAME` points the app at a
+fresh, empty IndexedDB and every logged session vanishes from view; renaming
+`EXPORT_FORMAT` makes `validateExport` reject every backup file written before
+the change. Tidying these up is the one "obvious cleanup" here that destroys
+data.
+
 ---
 
 ## Design system
@@ -196,9 +206,18 @@ show a numeric keypad. Nothing may shift under a thumb mid-set.
 
 ## Gotchas worth knowing before you hit them
 
-- **GitHub Pages serves this from a branch.** The live URL is
-  `https://starcrock7-lab.github.io/GYMGEAR-BACKEND5/personal-gym/`. `.nojekyll`
-  at the repo root stops Pages mangling the files.
+- **GitHub Pages serves this repo from `main`, at its root.** The live URL is
+  `https://starcrock7-lab.github.io/gym-log/`. `.nojekyll` at the repo root stops
+  Pages running the files through Jekyll — keep it.
+- **Nothing in the app hardcodes that URL, and it must stay that way.** The
+  manifest uses `start_url`/`scope` of `./`, `sw.js` registers as `'sw.js'`, and
+  every `SHELL` entry is relative. That is why moving repos cost nothing; an
+  absolute `/gym-log/...` path anywhere would break both the old installs and
+  any future move.
+- **Anyone who installed the old `/GYMGEAR-BACKEND5/personal-gym/` URL is on a
+  different origin path**, so their service worker, IndexedDB and history stay
+  there. Moving them over means exporting a backup from the old install and
+  importing it into the new one — the data does not follow the move by itself.
 - **iOS has no Fullscreen API.** The fullscreen timer is an overlay; the native
   call is a bonus on Android and desktop. Don't rely on it.
 - **On iOS, deleting the home-screen icon deletes the database.** That is why
