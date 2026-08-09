@@ -32,6 +32,13 @@
   --accent-deep: #155dc1;
   --accent-hover: #186adc;
   --accent-glow: rgba(30, 118, 240, 0.35);
+  /* The light end of the ramp. The site and the launch video both run the
+     accent as a two-tone gradient rather than one flat fill — display type,
+     primary buttons and the chart series all read off this pair. */
+  --accent-lift: #4d9bff;
+  --accent-grad: linear-gradient(135deg, var(--accent-lift), var(--accent-deep));
+  /* Hairline top highlight; what makes a dark card look lit rather than flat. */
+  --edge: rgba(255, 255, 255, 0.07);
 
   --navy: #0d1b35;
   --navy-deep: #081124;
@@ -41,7 +48,9 @@
 
   --ink: #f1f4fa;
   --ink-2: #a3adc2;
-  --ink-3: #667192;
+  /* Lifted from the site's #667192: against this app's raised navy that token
+     measures 3.89:1, and the micro-labels it colours are 0.62rem. */
+  --ink-3: #7d89a6;
 
   --line: rgba(255, 255, 255, 0.12);
   --line-2: rgba(255, 255, 255, 0.2);
@@ -68,7 +77,12 @@
 html, body {
   margin: 0;
   padding: 0;
-  background: var(--off);
+  /* Not a flat fill: the navy lifts toward the top of the screen and falls away
+     to near-black at the bottom, which is what stops a dark UI reading as grey. */
+  background:
+    radial-gradient(120% 62% at 50% -8%, #142a52 0%, transparent 62%),
+    linear-gradient(180deg, var(--navy) 0%, var(--off) 42%, #050b18 100%);
+  background-attachment: fixed;
   color: var(--ink);
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   font-size: 16px;
@@ -93,6 +107,26 @@ body::before {
   mask-image: linear-gradient(to bottom, #000 0%, transparent 70%);
 }
 
+/* The launch video's signature: long light streaks sweeping across a deep navy,
+   with an accent bloom behind the header. Static SVG — no animation, because
+   this sits under a screen you read mid-set. */
+body::after {
+  content: '';
+  position: fixed;
+  inset: 0 0 auto;
+  height: 44vh;
+  pointer-events: none;
+  z-index: 0;
+  background-image:
+    radial-gradient(70% 42% at 50% 0%, var(--accent-glow) 0%, transparent 68%),
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 400 420' preserveAspectRatio='none'%3E%3Cg fill='none' stroke='%23ffffff' stroke-width='1'%3E%3Cpath d='M-20 250 C 70 140 210 110 420 5' stroke-opacity='.13'/%3E%3Cpath d='M-20 292 C 80 178 222 148 420 38' stroke-opacity='.10'/%3E%3Cpath d='M-20 334 C 90 216 234 186 420 74' stroke-opacity='.08'/%3E%3Cpath d='M-20 376 C 100 254 246 224 420 110' stroke-opacity='.06'/%3E%3Cpath d='M-20 418 C 110 292 258 262 420 146' stroke-opacity='.05'/%3E%3Cpath d='M-20 208 C 60 102 198 72 420 -28' stroke-opacity='.07'/%3E%3C/g%3E%3C/svg%3E");
+  background-size: 100% 100%, 100% 100%;
+  background-repeat: no-repeat;
+  /* Gone well before the first list starts — atmosphere behind the header, not
+     texture running under content you read between sets. */
+  mask-image: linear-gradient(to bottom, #000 0%, #000 22%, transparent 78%);
+}
+
 body.no-scroll { overflow: hidden; }
 
 #app { position: relative; z-index: 1; min-height: 100dvh; padding-bottom: calc(74px + var(--safe-b)); }
@@ -105,11 +139,31 @@ h1, h2, h3, .display {
   letter-spacing: -0.02em;
   line-height: 1.15;
 }
-h1 { font-size: 1.4rem; }
+h1 { font-size: 1.72rem; letter-spacing: -0.035em; }
 h2 { font-size: 1.05rem; }
+
+/* The GYMGEAR/COMPARE lockup: one word in ink, the next in accent, tracked wide
+   and set in the display face. Used for the app's own name in the top bar. */
+.wordmark {
+  font-family: 'Space Grotesk', sans-serif;
+  font-weight: 700;
+  font-size: 1.28rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+.wordmark em {
+  font-style: normal;
+  background: var(--accent-grad);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
 p { margin: 0; }
 button, input, select, textarea { font-family: inherit; font-size: inherit; color: inherit; }
-a { color: var(--accent); }
+/* Accent *text* always uses the light end of the ramp: --accent itself measures
+   4.40:1 on navy, which fails at the small sizes these labels run at. Borders,
+   fills and glows keep using --accent, where contrast does not apply. */
+a { color: var(--accent-lift); }
 
 .muted { color: var(--ink-2); }
 .dim { color: var(--ink-3); }
@@ -163,20 +217,37 @@ a { color: var(--accent); }
   text-decoration: none; font-size: 0.6rem; font-weight: 700;
   letter-spacing: 0.12em; text-transform: uppercase;
 }
-.tabbar a.active { color: var(--accent); }
+.tabbar a { position: relative; }
+.tabbar a.active { color: var(--accent-lift); }
+/* A lit rail over the active tab, echoing the accent tick on the stat tiles. */
+.tabbar a.active::before {
+  content: ''; position: absolute; top: 0; left: 50%; transform: translateX(-50%);
+  width: 26px; height: 2px; border-radius: 0 0 2px 2px;
+  background: var(--accent-grad); box-shadow: 0 0 10px var(--accent-glow);
+}
+.tabbar a.active .icon { filter: drop-shadow(0 0 6px var(--accent-glow)); }
 .tabbar .icon { width: 21px; height: 21px; }
 
 /* --- surfaces ----------------------------------------------------------- */
 
 .card {
-  background: var(--card);
+  background: linear-gradient(180deg, var(--card-2) 0%, var(--card) 58%);
   border: 1px solid var(--line);
   border-radius: var(--r-lg);
   padding: 14px 15px;
+  /* Hairline along the top edge — the card catches the light from above. */
+  box-shadow: inset 0 1px 0 var(--edge), 0 1px 2px rgba(0, 0, 0, 0.35);
 }
 .card-tight { padding: 12px 13px; }
 .card-link { display: block; text-decoration: none; color: inherit; }
-.card-link:active { background: var(--card-2); }
+/* `.card-link` is declared after the layout utilities, so on its own it beats
+   `.spread`/`.row` and drops the trailing value onto its own line — which is
+   what made every exercise row three lines tall. Restore the intended flex. */
+.card-link.spread, .card-link.row { display: flex; }
+
+/* Anything you can tap gives way slightly under the thumb. */
+.card-link, button.card { transition: transform 0.12s ease, border-color 0.15s ease; }
+.card-link:active, button.card:active { transform: scale(0.985); border-color: var(--line-2); }
 
 /* The verdict panel: tinted fill, accent rule down the left. */
 .panel {
@@ -201,7 +272,36 @@ a { color: var(--accent); }
 }
 .pill-warm { background: var(--warn-soft); border-color: transparent; color: var(--warn); }
 .pill-pr { background: var(--win-soft); border-color: transparent; color: var(--win); }
-.pill-accent { background: color-mix(in srgb, var(--accent) 15%, transparent); border-color: transparent; color: var(--accent); }
+.pill-accent { background: color-mix(in srgb, var(--accent) 15%, transparent); border-color: transparent; color: var(--accent-lift); }
+
+/* Every muscle group visible at once. A scrolling rail is more compact but it
+   hides most of the options behind a gesture; the whole point of this control
+   is that you can see the group you want and hit it. */
+.chip-row {
+  display: flex; flex-wrap: wrap;
+  gap: 10px 7px;
+  padding: 2px 0;
+}
+.chip {
+  position: relative; flex: none;
+  min-height: 36px; padding: 0 14px; border-radius: 999px;
+  display: inline-flex; align-items: center; white-space: nowrap;
+  background: rgba(255, 255, 255, 0.05); border: 1px solid var(--line); color: var(--ink-2);
+  font-size: 0.84rem; font-weight: 600; cursor: pointer;
+  transition: color 0.15s ease, border-color 0.15s ease, background 0.15s ease, transform 0.12s ease;
+}
+/* The pill reads at 36px so the whole set stays clear of the list, but the thumb
+   still gets the full 44px: this pseudo-element belongs to the button, so a tap
+   in the 4px above or below it lands on the button. The 10px row gap is what
+   keeps neighbouring targets from overlapping and stealing each other's taps —
+   tighten it and the row above starts swallowing presses. */
+.chip::after { content: ''; position: absolute; inset: -4px 0; }
+.chip:active { transform: scale(0.96); }
+.chip.on {
+  background: color-mix(in srgb, var(--accent) 18%, transparent);
+  border-color: var(--accent); color: var(--accent-lift);
+  box-shadow: 0 0 14px var(--accent-glow);
+}
 
 /* --- buttons ------------------------------------------------------------ */
 
@@ -211,20 +311,32 @@ a { color: var(--accent); }
   padding: 0 16px; border-radius: var(--r);
   background: rgba(255, 255, 255, 0.05); border: 1px solid var(--line); color: var(--ink);
   font-weight: 600; cursor: pointer;
-  transition: background 0.15s ease, border-color 0.15s ease;
+  transition: background 0.15s ease, border-color 0.15s ease, transform 0.12s ease;
 }
 .btn:active { background: rgba(255, 255, 255, 0.09); }
 .btn:disabled { opacity: 0.35; }
 .btn-primary {
-  background: var(--accent); border-color: var(--accent); color: #fff;
-  box-shadow: 0 0 18px var(--accent-glow);
+  background: var(--accent-grad); border-color: transparent; color: #fff;
+  /* Two-stage glow: a tight rim plus a wide bloom, so the CTA sits in light
+     rather than having a ring drawn round it. */
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--accent-lift) 55%, transparent),
+              0 6px 26px var(--accent-glow),
+              inset 0 1px 0 rgba(255, 255, 255, 0.22);
+  font-weight: 700;
+  letter-spacing: 0.01em;
 }
-.btn-primary:active { background: var(--accent-hover); }
+.btn-primary:active { transform: scale(0.982); box-shadow: 0 0 0 1px var(--accent), 0 3px 14px var(--accent-glow); }
 .btn-danger { background: transparent; border-color: color-mix(in srgb, var(--bad) 55%, transparent); color: var(--bad); }
 .btn-ghost { background: transparent; border-color: transparent; color: var(--ink-2); }
+/* The "Edit"/"All" section links are visually small but must still be a full
+   thumb target; transparent, so the extra height costs nothing on screen. */
+.btn-sm.btn-ghost { min-height: var(--tap); }
 .btn-block { width: 100%; }
 .btn-sm { min-height: 36px; padding: 0 12px; font-size: 0.82rem; border-radius: var(--r-sm); }
 .btn-lg { min-height: 54px; font-size: 1.02rem; border-radius: var(--r-lg); }
+/* A CTA whose label is a sentence rather than a verb. Shrinks to hold one line
+   on a narrow phone instead of breaking in half. */
+.btn-sentence { white-space: nowrap; font-size: clamp(0.84rem, 3.6vw, 1.02rem); }
 
 .icon-btn {
   min-width: var(--tap); min-height: var(--tap);
@@ -268,7 +380,7 @@ textarea.input { min-height: 76px; resize: vertical; }
 }
 .set-no.warmup { background: var(--warn-soft); border-color: transparent; color: var(--warn); }
 /* A drop set reads as hanging off the set above it rather than standing alone. */
-.set-no.drop { background: color-mix(in srgb, var(--accent) 16%, transparent); border-color: transparent; color: var(--accent); }
+.set-no.drop { background: color-mix(in srgb, var(--accent) 16%, transparent); border-color: transparent; color: var(--accent-lift); }
 
 .ghost { color: var(--ink-3); font-size: 0.84rem; font-variant-numeric: tabular-nums; padding-left: 2px; }
 .ghost.none { font-style: italic; opacity: 0.6; }
@@ -317,6 +429,9 @@ textarea.input { min-height: 76px; resize: vertical; }
 .focus-title { font-size: 1.75rem; }
 .focus-nav { display: grid; grid-template-columns: 56px 1fr 56px; gap: 9px; padding: 11px 13px 0; }
 .focus-nav .btn { min-height: 54px; }
+/* The middle action carries an exercise name (already shortened by shortName),
+   so hold it on one line rather than splitting the button across two. */
+.focus-nav .btn-primary { white-space: nowrap; font-size: 0.9rem; }
 .focus-sets { display: grid; grid-template-columns: 42px 1fr 86px 72px 54px; gap: 9px; align-items: center; }
 .focus-sets .head { text-align: center; }
 .focus-sets .head:nth-child(2) { text-align: left; }
@@ -378,7 +493,7 @@ textarea.input { min-height: 76px; resize: vertical; }
   font-family: 'Space Grotesk', sans-serif;
   font-weight: 700; font-variant-numeric: tabular-nums; cursor: pointer;
 }
-.timer-presets button.on { background: color-mix(in srgb, var(--accent) 18%, transparent); border-color: var(--accent); color: var(--accent); }
+.timer-presets button.on { background: color-mix(in srgb, var(--accent) 18%, transparent); border-color: var(--accent); color: var(--accent-lift); }
 
 /* --- sheets and toasts -------------------------------------------------- */
 
@@ -419,9 +534,30 @@ textarea.input { min-height: 76px; resize: vertical; }
 
 /* --- stats and charts --------------------------------------------------- */
 
-.stat-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(88px, 1fr)); gap: 9px; }
-.stat { background: var(--card); border: 1px solid var(--line); border-radius: var(--r); padding: 11px 12px; }
-.stat .v { font-family: 'Space Grotesk', sans-serif; font-size: 1.16rem; font-weight: 700; font-variant-numeric: tabular-nums; margin-top: 3px; letter-spacing: -0.02em; }
+.stat-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(88px, 1fr)); gap: 9px; align-items: stretch; }
+/* Label sits on top, number anchored to the bottom, so a wrapped label can
+   never leave one tile's figure floating higher than its neighbour's. */
+.stat {
+  display: flex; flex-direction: column; justify-content: space-between; gap: 8px;
+  position: relative; overflow: hidden;
+  background: linear-gradient(180deg, var(--card-2) 0%, var(--card) 60%);
+  border: 1px solid var(--line); border-radius: var(--r); padding: 11px 12px;
+  box-shadow: inset 0 1px 0 var(--edge);
+}
+/* A short accent tick in the corner — the tile is lit by the brand, not boxed. */
+.stat::before {
+  content: ''; position: absolute; top: 0; left: 12px; width: 26px; height: 2px;
+  background: var(--accent-grad); border-radius: 0 0 2px 2px;
+  box-shadow: 0 0 10px var(--accent-glow);
+}
+/* Sized to the longest figure a tile has to hold ("358.6k lb" three-up on a
+   375px phone), because a wrapped number stops reading as a number. */
+.stat .v {
+  font-family: 'Space Grotesk', sans-serif; font-weight: 700;
+  font-size: clamp(0.95rem, 4.2vw, 1.55rem);
+  font-variant-numeric: tabular-nums; line-height: 1; letter-spacing: -0.04em;
+  white-space: nowrap;
+}
 .stat .s { font-size: 0.71rem; color: var(--ink-3); line-height: 1.35; }
 
 .verdict { display: flex; align-items: center; gap: 12px; padding: 14px 15px; border-radius: 0 var(--r) var(--r) 0; border-left: 3px solid var(--line-2); background: var(--card); }
@@ -441,8 +577,8 @@ textarea.input { min-height: 76px; resize: vertical; }
 .chart .bar { fill: var(--accent); }
 
 .range-tabs { display: flex; gap: 7px; }
-.range-tabs button { flex: 1; min-height: 36px; border-radius: 999px; background: rgba(255, 255, 255, 0.05); border: 1px solid var(--line); color: var(--ink-3); font-size: 0.78rem; font-weight: 700; cursor: pointer; }
-.range-tabs button.on { background: color-mix(in srgb, var(--accent) 16%, transparent); border-color: var(--accent); color: var(--accent); }
+.range-tabs button { flex: 1; min-height: var(--tap); border-radius: 999px; background: rgba(255, 255, 255, 0.05); border: 1px solid var(--line); color: var(--ink-3); font-size: 0.78rem; font-weight: 700; cursor: pointer; }
+.range-tabs button.on { background: color-mix(in srgb, var(--accent) 16%, transparent); border-color: var(--accent); color: var(--accent-lift); }
 
 /* --- lists -------------------------------------------------------------- */
 
@@ -458,8 +594,10 @@ textarea.input { min-height: 76px; resize: vertical; }
 .list-item:active { background: rgba(255, 255, 255, 0.04); }
 
 .heatmap { display: grid; grid-template-columns: repeat(auto-fill, minmax(11px, 1fr)); gap: 3px; }
-.heatmap i { aspect-ratio: 1; border-radius: 2px; background: rgba(255, 255, 255, 0.07); display: block; }
-.heatmap i.on { background: var(--win); }
+.heatmap i { aspect-ratio: 1; border-radius: 2.5px; background: rgba(255, 255, 255, 0.06); display: block; }
+/* Accent, not green: blue is this app's data colour, and green is reserved for
+   "this set is done". A wall of green squares reads as a status, not a record. */
+.heatmap i.on { background: var(--accent); box-shadow: 0 0 7px var(--accent-glow); }
 
 .plate-visual { display: flex; align-items: center; justify-content: center; gap: 3px; flex-wrap: wrap; padding: 16px 0; }
 .plate { border-radius: 3px; background: var(--accent); color: #fff; font-size: 0.68rem; font-weight: 700;

@@ -6,13 +6,14 @@ export function homeScreen() {
   const history = finishedWorkouts();
   const exercisesById = new Map(state.exercises.map((e) => [e.id, e]));
 
-  return screen('Gym Log', { subtitle: streakLine(history) },
+  // The site's two-tone lockup, in this app's name. `screen` takes a node here.
+  return screen(h('span', { class: 'wordmark' }, 'GYM', h('em', {}, 'LOG')), { subtitle: streakLine(history) },
     state.active ? resumeCard() : null,
 
     h('div', { class: 'stack-sm' },
       h('p', { class: 'section-title' }, 'Start'),
       h('button', {
-        class: 'btn btn-primary btn-block',
+        class: 'btn btn-primary btn-block btn-lg',
         onclick: () => begin({}),
       }, icon('plus'), 'Start empty workout'),
     ),

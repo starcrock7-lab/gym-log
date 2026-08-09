@@ -58,7 +58,7 @@ export function workoutScreen() {
 
     workout.entries.length
       ? h('button', {
-          class: 'btn btn-primary btn-block btn-lg',
+          class: 'btn btn-primary btn-block btn-lg btn-sentence',
           onclick: () => { location.hash = `#/focus/${firstUnfinished(workout)}`; },
         }, icon('focus'), 'Focus mode — one exercise at a time')
       : null,

@@ -43,19 +43,19 @@ export function exerciseListScreen() {
       : [empty('Nothing matches that')]));
   };
 
-  const groups = h('div', { class: 'row wrap', style: { gap: '6px' } },
+  const groups = h('div', { class: 'chip-row' },
     ['All', ...MUSCLE_GROUPS].map((name) =>
       h('button', {
-        class: 'btn btn-sm',
+        class: 'chip',
         onclick: (e) => {
           group = name;
-          for (const b of groups.children) b.classList.remove('btn-primary');
-          e.currentTarget.classList.add('btn-primary');
+          for (const b of groups.children) b.classList.remove('on');
+          e.currentTarget.classList.add('on');
           render();
         },
       }, name)),
   );
-  groups.firstChild.classList.add('btn-primary');
+  groups.firstChild.classList.add('on');
 
   render();
 

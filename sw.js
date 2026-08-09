@@ -1,6 +1,6 @@
 // Cache-first with a versioned cache. Bump CACHE when shipping a change, or
 // the phone keeps serving the old app forever.
-const CACHE = 'gym-log-v4';
+const CACHE = 'gym-log-v5';
 
 const SHELL = [
   './',

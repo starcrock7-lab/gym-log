@@ -157,10 +157,30 @@ under a differently-generated id. There is a test for that; don't remove it.
 `css/app.css` is a port of the real thing from `starcrock7-lab/gymgear-frontend5`
 (`src/app/globals.css` plus its components), with the accent ramp rotated from
 orange to blue. Tokens carried over verbatim: `--off` / `--card` navy surfaces,
-`--ink` / `--ink-2` / `--ink-3`, `--line` at 12% white, `--win: #2fbf62`, the 54px
-grid overlay, the `0.62rem` uppercase micro-label at `0.2em` tracking, and
-generous radii (8/12/16/22px — the site uses `rounded-lg`/`xl`/`2xl`, not tight
-corners).
+`--ink` / `--ink-2`, `--line` at 12% white, `--win: #2fbf62`, the 54px grid
+overlay, the `0.62rem` uppercase micro-label at `0.2em` tracking, and generous
+radii (8/12/16/22px — the site uses `rounded-lg`/`xl`/`2xl`, not tight corners).
+
+Where this app deliberately departs from the site, and why — don't "restore"
+these without re-measuring:
+
+- **`--accent-lift` (#4d9bff) is the colour of accent *text*.** Plain `--accent`
+  on navy measures 4.40:1, which fails AA at the sizes these labels run
+  (pills, active tab, range tabs, links, drop-set markers). Borders, fills and
+  glows still use `--accent`, where contrast doesn't apply.
+- **`--ink-3` is #7d89a6, lifted from the site's #667192**, which measured
+  3.89:1 against this app's raised navy while colouring 0.62rem micro-labels.
+- **The accent is a two-tone gradient** (`--accent-grad`) on primary buttons,
+  stat ticks and the wordmark — matching the launch video, which never uses a
+  flat accent fill.
+- **Blue is the data colour; green means "done".** The training heatmap is
+  accent, not `--win`. A wall of green reads as a status, not a record.
+- **Atmosphere lives in `body::after`**: an accent bloom plus static SVG light
+  streaks from the video, masked out well above the first list. It is not
+  animated — it sits under a screen you read between sets.
+
+Verify contrast and tap targets by measuring, not by looking: drive the app and
+check computed colours. Screenshots will not tell you a label is at 3.9:1.
 
 Fonts are self-hosted so the app keeps its typography offline. Do not switch to a
 CDN.
