@@ -1,6 +1,6 @@
 // Cache-first with a versioned cache. Bump CACHE when shipping a change, or
 // the phone keeps serving the old app forever.
-const CACHE = 'gym-log-v7';
+const CACHE = 'gym-log-v8';
 
 const SHELL = [
   './',
@@ -32,6 +32,7 @@ const SHELL = [
   'js/ui/focus.js',
   'js/ui/timer.js',
   'js/ui/share.js',
+  'js/ui/weightfield.js',
   'icons/icon-192.png',
   'icons/icon-512.png',
   'icons/icon-180.png',

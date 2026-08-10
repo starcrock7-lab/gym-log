@@ -11,6 +11,7 @@ import { normaliseSet } from '../schema.js';
 import { exercisePicker } from './pickers.js';
 import { setRow, setSetLoggedHandler, resetPRAnnouncements } from './setrow.js';
 import { openTimerFullscreen } from './timer.js';
+import { bodyWeightField } from './weightfield.js';
 
 export { resetPRAnnouncements };
 
@@ -198,11 +199,11 @@ function addExercise() {
 function optionsSheet() {
   const name = h('input', { class: 'input', value: state.active.name });
   const note = h('textarea', { class: 'input', placeholder: 'How did it go?', value: state.active.note || '' });
-  const bw = h('input', { class: 'input', type: 'number', inputmode: 'decimal', step: '0.1', placeholder: 'Body weight (lb)', value: state.active.bodyWeightLb ?? '' });
+  const bw = bodyWeightField({ value: state.active.bodyWeightLb ?? null, placeholder: 'Body weight' });
 
   sheet('Workout', frag(
     h('div', { class: 'field' }, h('label', {}, 'Name'), name),
-    h('div', { class: 'field' }, h('label', {}, 'Body weight today'), bw,
+    h('div', { class: 'field' }, h('label', {}, 'Body weight today'), bw.node,
       h('p', { class: 'muted small' }, 'Used to work out the true load on pull-ups and dips.')),
     h('div', { class: 'field' }, h('label', {}, 'Note'), note),
     h('button', {
@@ -226,7 +227,8 @@ function optionsSheet() {
     actions: [h('button', {
       class: 'btn btn-primary btn-block',
       onclick: async () => {
-        const weightLb = Number(bw.value) || null;
+        const parsed = bw.read();
+        const weightLb = parsed.ok ? parsed.lb : null;
         await mutateActive((w) => { w.name = name.value.trim() || 'Workout'; w.note = note.value; w.bodyWeightLb = weightLb; }, { redraw: true });
         if (weightLb) await logBodyWeight(weightLb);
         closeSheet();

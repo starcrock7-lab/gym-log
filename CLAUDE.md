@@ -150,6 +150,19 @@ history or settings. Exercises are matched by id, then by normalised name — th
 name fallback is what attaches a shared split to history the receiver already has
 under a differently-generated id. There is a test for that; don't remove it.
 
+### Body weight is stored in pounds, whatever was typed
+
+`weightLb` and `bodyWeightLb` are always pounds. Kilos exist only at the moment
+of entry: `parseBodyWeight` in `calc.js` converts, and `bodyWeightEntryUnit` in
+settings just remembers which unit you type in.
+
+The unit is never inferred from the size of the number, and adding that
+"convenience" would be a data bug, not a feature — 100 is a plausible body
+weight in either unit, and this figure is added back into the load on pull-ups
+and dips, so a wrong guess corrupts every bodyweight 1RM estimate silently.
+Both entry points (Body screen, workout options) share `ui/weightfield.js` so
+they cannot drift.
+
 ### `personal-gym` is a frozen name, not a stale one
 
 `DB_NAME = 'personal-gym'` and `EXPORT_FORMAT = 'personal-gym-export'` in

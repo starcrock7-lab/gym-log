@@ -43,6 +43,9 @@ export const EQUIPMENT = [
 export function defaultSettings() {
   return {
     unit: 'lb',
+    // Which unit you type your body weight in. Storage and display stay in
+    // pounds regardless — this only decides how a bare number is read.
+    bodyWeightEntryUnit: 'lb',
     defaultRestSec: 120,
     dropPercent: 20,
     barWeightLb: 45,

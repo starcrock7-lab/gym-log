@@ -17,6 +17,9 @@ import {
   formatWeight,
   formatVolume,
   formatDuration,
+  parseBodyWeight,
+  kgToLb,
+  lbToKg,
 } from '../js/calc.js';
 
 const DAY = 86400000;
@@ -324,4 +327,44 @@ test('durations read like a stopwatch', () => {
   assert.equal(formatDuration(90 * 1000), '1m 30s');
   assert.equal(formatDuration(45 * 1000), '45s');
   assert.equal(formatDuration(null), '—');
+});
+
+test('a body weight typed in kilos is stored in pounds', () => {
+  const parsed = parseBodyWeight('80', 'kg');
+  assert.equal(parsed.ok, true);
+  assert.equal(parsed.unit, 'kg');
+  assert.equal(parsed.lb, 176.4);
+});
+
+test('a body weight typed in pounds is left alone', () => {
+  assert.deepEqual(parseBodyWeight('176.4', 'lb'), { ok: true, lb: 176.4, unit: 'lb' });
+});
+
+// The whole point of the toggle: the same digits mean different weights, and
+// the app must never decide which on its own.
+test('the same number means different things in each unit', () => {
+  assert.equal(parseBodyWeight('100', 'lb').lb, 100);
+  assert.equal(parseBodyWeight('100', 'kg').lb, 220.5);
+});
+
+test('a typed unit beats the selected one', () => {
+  assert.equal(parseBodyWeight('80kg', 'lb').lb, 176.4);
+  assert.equal(parseBodyWeight('180 lb', 'kg').lb, 180);
+  assert.equal(parseBodyWeight('80 kilos', 'lb').lb, 176.4);
+  assert.equal(parseBodyWeight('180lbs', 'kg').unit, 'lb');
+});
+
+test('a comma decimal is read the same as a point', () => {
+  assert.equal(parseBodyWeight('80,5', 'kg').lb, parseBodyWeight('80.5', 'kg').lb);
+});
+
+test('nonsense is refused rather than turned into a weight', () => {
+  for (const bad of ['', '   ', 'abc', '-80', '0', '8o', '80 stone', '1.2.3']) {
+    assert.equal(parseBodyWeight(bad, 'kg').ok, false, `${JSON.stringify(bad)} should be refused`);
+  }
+});
+
+test('converting to kilos and back returns the same weight', () => {
+  const lb = 176.4;
+  assert.ok(Math.abs(kgToLb(lbToKg(lb)) - lb) < 1e-9);
 });

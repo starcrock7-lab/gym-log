@@ -324,6 +324,37 @@ export function formatVolume(lb) {
   return n >= 10000 ? `${(n / 1000).toFixed(1)}k` : n.toLocaleString('en-US');
 }
 
+// ---------------------------------------------------------------------------
+// Body weight entry
+// ---------------------------------------------------------------------------
+
+export const LB_PER_KG = 2.20462;
+
+export function kgToLb(kg) { return (Number(kg) || 0) * LB_PER_KG; }
+export function lbToKg(lb) { return (Number(lb) || 0) / LB_PER_KG; }
+
+// Reads a typed body weight and gives it back in pounds, which stays the only
+// unit anything is stored or charted in.
+//
+// The unit is never inferred from the size of the number. 100 is an entirely
+// plausible body weight in either kilos or pounds, and this figure gets added
+// back into the load on pull-ups and dips — so guessing wrong would quietly
+// corrupt every bodyweight 1RM estimate instead of failing visibly. The unit
+// comes from a suffix when one is typed, and otherwise from the unit picked.
+export function parseBodyWeight(raw, unit = 'lb') {
+  const text = String(raw ?? '').trim().toLowerCase().replace(',', '.');
+  const match = text.match(/^(\d*\.?\d+)\s*(kgs?|kilos?|kilograms?|lbs?|pounds?)?$/);
+  if (!match) return { ok: false, lb: 0, unit };
+
+  const value = Number(match[1]);
+  if (!Number.isFinite(value) || value <= 0) return { ok: false, lb: 0, unit };
+
+  const suffix = match[2];
+  const resolved = suffix ? (suffix[0] === 'k' ? 'kg' : 'lb') : (unit === 'kg' ? 'kg' : 'lb');
+  const lb = resolved === 'kg' ? kgToLb(value) : value;
+  return { ok: true, lb: Math.round(lb * 10) / 10, unit: resolved };
+}
+
 export function formatDuration(ms) {
   if (ms == null) return '—';
   const total = Math.max(0, Math.floor(ms / 1000));

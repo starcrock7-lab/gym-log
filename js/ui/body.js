@@ -3,6 +3,7 @@ import { state, logBodyWeight, removeBodyWeight } from '../store.js';
 import { formatWeight } from '../calc.js';
 import { lineChart } from '../charts.js';
 import { isoDay } from '../schema.js';
+import { bodyWeightField } from './weightfield.js';
 
 const RANGES = [['30d', 30], ['90d', 90], ['1y', 365], ['All', Infinity]];
 
@@ -74,14 +75,11 @@ export function bodyScreen() {
 }
 
 function logSheet(existing = null) {
-  const weight = h('input', {
-    class: 'input', type: 'number', inputmode: 'decimal', step: '0.1',
-    placeholder: 'lb', value: existing?.weightLb ?? '',
-  });
+  const weight = bodyWeightField({ value: existing?.weightLb ?? null, placeholder: 'Body weight' });
   const date = h('input', { class: 'input', type: 'date', value: existing?.date || isoDay() });
 
   sheet(existing ? 'Edit weigh-in' : 'Log body weight', h('div', { class: 'stack' },
-    h('div', { class: 'field' }, h('label', {}, 'Weight (lb)'), weight),
+    h('div', { class: 'field' }, h('label', {}, 'Weight'), weight.node),
     h('div', { class: 'field' }, h('label', {}, 'Date'), date),
     existing
       ? h('button', {
@@ -100,14 +98,14 @@ function logSheet(existing = null) {
       h('button', {
         class: 'btn btn-primary',
         onclick: async () => {
-          const value = Number(weight.value);
-          if (!value || value <= 0) { weight.focus(); toast('Enter a weight', { error: true }); return; }
-          await logBodyWeight(value, date.value || isoDay());
+          const parsed = weight.read();
+          if (!parsed.ok) { weight.input.focus(); toast('Enter a weight', { error: true }); return; }
+          await logBodyWeight(parsed.lb, date.value || isoDay());
           closeSheet();
           toast('Logged');
         },
       }, 'Save'),
     ],
   });
-  setTimeout(() => weight.focus(), 120);
+  setTimeout(() => weight.input.focus(), 120);
 }
