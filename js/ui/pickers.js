@@ -5,7 +5,7 @@ import { MUSCLE_GROUPS, EQUIPMENT } from '../schema.js';
 
 // Pick one or more exercises. Search matches name, muscle group and equipment,
 // so "barbell" and "chest" both narrow the list the way you would expect.
-export function exercisePicker({ multi = false, exclude = [], onPick }) {
+export function exercisePicker({ multi = false, exclude = [], title = 'Add exercise', onPick }) {
   const excluded = new Set(exclude);
   const chosen = new Set();
   let query = '';
@@ -58,22 +58,24 @@ export function exercisePicker({ multi = false, exclude = [], onPick }) {
     oninput: (e) => { query = e.target.value; render(); },
   });
 
-  const groups = h('div', { class: 'row wrap', style: { gap: '6px' } },
+  // Same filter rail as the Exercises screen: every group visible at once, and
+  // compact enough that the list underneath is still worth scrolling.
+  const groups = h('div', { class: 'chip-row' },
     ['All', ...MUSCLE_GROUPS].map((name) =>
       h('button', {
-        class: 'btn btn-sm',
+        class: 'chip', type: 'button',
         onclick: (e) => {
           group = name;
-          for (const b of groups.children) b.classList.remove('btn-primary');
-          e.currentTarget.classList.add('btn-primary');
+          for (const b of groups.children) b.classList.remove('on');
+          e.currentTarget.classList.add('on');
           render();
         },
       }, name)),
   );
-  groups.firstChild.classList.add('btn-primary');
+  groups.firstChild.classList.add('on');
 
   render();
-  sheet('Add exercise', frag(search, groups, results), {
+  sheet(title, frag(search, groups, results), {
     actions: [
       h('button', { class: 'btn', onclick: () => newExerciseSheet(query, (created) => { onPick(multi ? [created.id] : created.id); closeSheet(); }) }, 'New'),
       confirm,

@@ -163,6 +163,20 @@ The consequence to know: this mirrors the last session, so a session you cut
 short shrinks the rows next time. That is deliberate — it reflects what you did
 — but it is the thing to revisit if it ever feels wrong.
 
+### A routine only changes when you edit it
+
+Nothing a session does writes back to a routine. `finishWorkout` puts a row in
+`STORE.workouts` and touches nothing else; `saveRoutine` runs only from the
+routines editor and from the explicit "Save as routine" button, which mints a
+new id rather than overwriting the routine you started from. So swapping an
+exercise, adding one, or changing set counts all live and die with that session.
+
+The one thing that *does* carry forward is prefill — how many rows and what
+weight they open with, from your last session. That is not the routine changing;
+`routine.exercises` is untouched. Verified by driving it: swap, log, finish,
+start the same routine again, and both the screen and the stored routine come
+back to the original exercise.
+
 ### Swapping an exercise never inherits the old one's numbers
 
 `swapActiveExercise` rebuilds the rows from the *new* exercise's own history.

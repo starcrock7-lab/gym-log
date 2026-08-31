@@ -168,6 +168,7 @@ function entrySheet(entry, entryIndex) {
       onclick: () => {
         closeSheet();
         exercisePicker({
+          title: `Swap ${exerciseName(entry.exerciseId)} for…`,
           // Swapping to something already in this workout would just make a
           // duplicate, so those are out of the list.
           exclude: state.active.entries.map((e) => e.exerciseId),
