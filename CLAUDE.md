@@ -27,7 +27,7 @@ Git email must be `starcrock7@gmail.com`.
 ## Verify after every change
 
 ```sh
-npm test                                            # 92 tests, node --test
+npm test                                            # 105 tests, node --test
 for f in $(find js test scripts -name '*.js'); do node --check "$f"; done
 ```
 
@@ -149,6 +149,28 @@ weights come from their own history via the normal ghost-text path. Importing is
 history or settings. Exercises are matched by id, then by normalised name — the
 name fallback is what attaches a shared split to history the receiver already has
 under a differently-generated id. There is a test for that; don't remove it.
+
+### The last session decides how many sets you get, not the routine
+
+`setsForNextSession` in `schema.js` builds an exercise's opening rows from the
+sets actually completed last time — six sets stay six sets, each carrying the
+weight and reps used on it. A routine's `targetSets` is only the starting plan,
+used until there is history. Warm-ups keep their kind; a drop set comes back as
+a working set, because a drop hangs off the set before it and recreating one on
+an empty session would be meaningless.
+
+The consequence to know: this mirrors the last session, so a session you cut
+short shrinks the rows next time. That is deliberate — it reflects what you did
+— but it is the thing to revisit if it ever feels wrong.
+
+### Swapping an exercise never inherits the old one's numbers
+
+`swapActiveExercise` rebuilds the rows from the *new* exercise's own history.
+What you lifted on incline curls says nothing about the movement you switched
+to. With no history it keeps the row count so a swap cannot quietly shrink the
+plan, and it refuses outright when sets are already ticked unless the caller
+passes `discardLogged` — relabelling completed sets would put a lift in your
+history that you never performed.
 
 ### Body weight is stored in pounds, whatever was typed
 

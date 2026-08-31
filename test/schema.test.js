@@ -5,6 +5,7 @@ import {
   validateExport,
   normaliseExport,
   normaliseSet,
+  setsForNextSession,
   normaliseWorkout,
   buildExport,
   defaultSettings,
@@ -176,4 +177,43 @@ test('bodyweight lifts are flagged so their load is computed correctly', () => {
   assert.equal(byId.get('pull-up').isBodyweight, true);
   assert.equal(byId.get('chin-up').isBodyweight, true);
   assert.equal(byId.get('barbell-bench-press').isBodyweight, false);
+});
+
+// ---------------------------------------------------------------------------
+// The rows an exercise opens with next time
+// ---------------------------------------------------------------------------
+
+const did = (weightLb, reps, type = 'working') => normaliseSet({ weightLb, reps, type, done: true });
+
+test('six sets last time means six sets next time, not the routine plan', () => {
+  const previous = [did(95, 8), did(135, 6), did(135, 6), did(145, 5), did(145, 5), did(155, 3)];
+  const next = setsForNextSession(previous, 3);
+  assert.equal(next.length, 6);
+});
+
+test('each row comes back with the weight and reps used on it', () => {
+  const previous = [did(135, 6), did(145, 5), did(155, 3)];
+  const next = setsForNextSession(previous, 3);
+  assert.deepEqual(next.map((s) => [s.weightLb, s.reps]), [[135, 6], [145, 5], [155, 3]]);
+});
+
+test('nothing comes back already ticked', () => {
+  const next = setsForNextSession([did(135, 6), did(135, 6)], 3);
+  assert.equal(next.some((s) => s.done), false);
+});
+
+test('a warm-up stays a warm-up, and a drop set does not come back as one', () => {
+  const next = setsForNextSession([did(95, 10, 'warmup'), did(135, 6), did(110, 8, 'drop')], 3);
+  assert.deepEqual(next.map((s) => s.type), ['warmup', 'working', 'working']);
+});
+
+test('with no history the routine plan decides how many rows there are', () => {
+  const next = setsForNextSession([], 4);
+  assert.equal(next.length, 4);
+  assert.deepEqual(next.map((s) => [s.weightLb, s.reps]), [[0, 0], [0, 0], [0, 0], [0, 0]]);
+});
+
+test('there is always at least one row to log into', () => {
+  assert.equal(setsForNextSession([], 0).length, 1);
+  assert.equal(setsForNextSession(undefined, undefined).length, 3);
 });

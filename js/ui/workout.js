@@ -5,6 +5,7 @@ import { h, frag, icon, screen, sheet, closeSheet, confirmSheet, toast, empty } 
 import {
   state, mutateActive, exerciseById, exerciseName, addExerciseToActive, addSetToActive,
   finishWorkout, discardWorkout, startRest, lastPerformanceSession, saveRoutine, logBodyWeight,
+  swapActiveExercise,
 } from '../store.js';
 import { formatWeight, formatDuration, sessionTotals, workingSets } from '../calc.js';
 import { normaliseSet } from '../schema.js';
@@ -162,6 +163,32 @@ function entrySheet(entry, entryIndex) {
         onclick: () => { moveEntry(entryIndex, 1); closeSheet(); },
       }, 'Move down'),
     ),
+    h('button', {
+      class: 'btn btn-block',
+      onclick: () => {
+        closeSheet();
+        exercisePicker({
+          // Swapping to something already in this workout would just make a
+          // duplicate, so those are out of the list.
+          exclude: state.active.entries.map((e) => e.exerciseId),
+          onPick: async (id) => {
+            const from = exerciseName(entry.exerciseId);
+            const to = exerciseName(id);
+            const logged = entry.sets.filter((set) => set.done).length;
+            if (logged) {
+              const ok = await confirmSheet(
+                `Swap ${from} for ${to}?`,
+                `${logged} logged ${logged === 1 ? 'set is' : 'sets are'} recorded against ${from} and will be discarded — you did not do ${to}.`,
+                { confirmLabel: 'Swap and discard', danger: true },
+              );
+              if (!ok) return;
+            }
+            if (await swapActiveExercise(entryIndex, id, { discardLogged: true })) toast(`Swapped to ${to}`);
+          },
+        });
+      },
+    }, icon('forward'), 'Swap for another exercise'),
+
     h('button', {
       class: 'btn btn-danger btn-block',
       onclick: async () => {

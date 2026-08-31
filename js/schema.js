@@ -205,6 +205,29 @@ export function normaliseSet(set) {
   };
 }
 
+// The rows an exercise should open with next time you do it: the session you
+// actually did last, so six sets stay six sets with the weight used on each.
+// `previousSets` is what came back from the last finished session (already
+// stripped to the sets that were ticked), and `fallbackCount` is the routine's
+// plan, used only when there is no history yet.
+//
+// Nothing is carried across as done — it is a starting point, not a record.
+export function setsForNextSession(previousSets, fallbackCount = 3) {
+  const previous = Array.isArray(previousSets) ? previousSets : [];
+  const count = previous.length || Math.max(1, Math.floor(Number(fallbackCount) || 0) || 1);
+  return Array.from({ length: count }, (_, i) => {
+    const before = previous[i];
+    return normaliseSet({
+      weightLb: before?.weightLb ?? 0,
+      reps: before?.reps ?? 0,
+      // A drop set hangs off the set before it and should not be recreated as
+      // one on a fresh session; anything else keeps its kind.
+      type: before?.type === 'warmup' ? 'warmup' : 'working',
+      done: false,
+    });
+  });
+}
+
 export function buildExport(data, exportedAt = new Date().toISOString()) {
   return {
     format: EXPORT_FORMAT,

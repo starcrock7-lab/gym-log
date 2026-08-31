@@ -8,7 +8,7 @@
 import * as db from './db.js';
 import {
   STORE, KV, defaultSettings, defaultBackupState, newId, isoDay,
-  normaliseExercise, normaliseRoutine, normaliseWorkout, normaliseSet,
+  normaliseExercise, normaliseRoutine, normaliseWorkout, normaliseSet, setsForNextSession,
 } from './schema.js';
 import { SEED_EXERCISES, SEED_ROUTINES } from './seed.js';
 import { roundToStep } from './calc.js';
@@ -234,18 +234,12 @@ export async function startWorkout({ routineId = null, name = null } = {}) {
   return state.active;
 }
 
+// The routine's targetSets is only the starting plan. Once you have actually
+// done the exercise, the session you did last decides how many rows you get --
+// work up to six sets and six sets are waiting for you next time, each with the
+// weight you used on it.
 function buildPlannedSets(planned) {
-  const previous = lastPerformanceSets(planned.exerciseId);
-  const count = Math.max(1, planned.targetSets || 3);
-  return Array.from({ length: count }, (_, i) => {
-    const before = previous[i];
-    return normaliseSet({
-      weightLb: before?.weightLb ?? 0,
-      reps: before?.reps ?? 0,
-      type: before?.type === 'warmup' ? 'warmup' : 'working',
-      done: false,
-    });
-  });
+  return setsForNextSession(lastPerformanceSets(planned.exerciseId), planned.targetSets || 3);
 }
 
 // The sets from the last session that included this exercise — warm-ups kept,
@@ -267,16 +261,37 @@ export function lastPerformanceSession(exerciseId, excludeWorkoutId = null) {
 
 export async function addExerciseToActive(exerciseId) {
   await mutateActive((workout) => {
-    const previous = lastPerformanceSets(exerciseId);
     workout.entries.push({
       exerciseId,
       position: workout.entries.length,
       note: '',
-      sets: previous.length
-        ? previous.slice(0, 4).map((s) => normaliseSet({ weightLb: s.weightLb, reps: s.reps, type: s.type }))
-        : [normaliseSet({})],
+      // Was capped at four rows, which silently truncated anyone doing more.
+      sets: setsForNextSession(lastPerformanceSets(exerciseId), 1),
     });
   }, { redraw: true });
+}
+
+// Swap one exercise for another in the running workout, keeping its place in
+// the list. The rows are rebuilt from the *new* exercise's own history, because
+// the weights you used on incline curls say nothing about what you should be
+// lifting on the one you switched to. With no history it keeps the same number
+// of rows, so swapping a movement never quietly shrinks your plan.
+//
+// Refuses when sets are already ticked: those reps happened on the old
+// exercise, and silently relabelling them would put a lift in your history that
+// you never did. The UI offers to drop them first.
+export async function swapActiveExercise(entryIndex, exerciseId, { discardLogged = false } = {}) {
+  const entry = state.active?.entries?.[entryIndex];
+  if (!entry || entry.exerciseId === exerciseId) return false;
+  if (!discardLogged && entry.sets.some((set) => set.done)) return false;
+
+  await mutateActive((workout) => {
+    const target = workout.entries[entryIndex];
+    target.exerciseId = exerciseId;
+    target.note = '';
+    target.sets = setsForNextSession(lastPerformanceSets(exerciseId), target.sets.length);
+  }, { redraw: true });
+  return true;
 }
 
 // Adding a set, whatever kind.
