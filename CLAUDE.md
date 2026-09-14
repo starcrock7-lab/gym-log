@@ -27,7 +27,7 @@ Git email must be `starcrock7@gmail.com`.
 ## Verify after every change
 
 ```sh
-npm test                                            # 105 tests, node --test
+npm test                                            # 113 tests, node --test
 for f in $(find js test scripts -name '*.js'); do node --check "$f"; done
 ```
 
@@ -162,6 +162,21 @@ an empty session would be meaningless.
 The consequence to know: this mirrors the last session, so a session you cut
 short shrinks the rows next time. That is deliberate — it reflects what you did
 — but it is the thing to revisit if it ever feels wrong.
+
+### An exercise has a list of muscle groups, and one transitional alias
+
+`muscleGroups` is the real field. `muscleGroup` still exists as a derived alias
+equal to `muscleGroups[0]`, set inside `normaliseExercise` and nowhere else —
+seeding, `saveExercise` and import all funnel through that function, so the two
+cannot drift. It is scaffolding: once every read site uses the list, delete the
+alias and this paragraph.
+
+`DB_VERSION` is 2. The `case 1:` arm of `onupgradeneeded` wraps each stored
+`muscleGroup` into a one-item list inside the versionchange transaction, so the
+upgrade is all-or-nothing. It rewrites rows rather than re-seeding, because the
+exercises store holds the user's own custom exercises, which exist nowhere else.
+An unrecognised group is carried through, not dropped — losing a label beats
+losing someone's data.
 
 ### A routine only changes when you edit it
 

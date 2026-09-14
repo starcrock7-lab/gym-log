@@ -7,6 +7,8 @@ import {
   normaliseSet,
   setsForNextSession,
   normaliseWorkout,
+  normaliseExercise,
+  toMuscleGroups,
   buildExport,
   defaultSettings,
   newId,
@@ -216,4 +218,58 @@ test('with no history the routine plan decides how many rows there are', () => {
 test('there is always at least one row to log into', () => {
   assert.equal(setsForNextSession([], 0).length, 1);
   assert.equal(setsForNextSession(undefined, undefined).length, 3);
+});
+
+// ---------------------------------------------------------------------------
+// muscleGroup -> muscleGroups
+// ---------------------------------------------------------------------------
+
+test('an exercise saved the old way keeps its group, as a list of one', () => {
+  const migrated = normaliseExercise({ id: 'ex1', name: 'Cable Crossover', muscleGroup: 'Chest' });
+  assert.deepEqual(migrated.muscleGroups, ['Chest']);
+});
+
+test('an exercise already carrying a list is left as it is', () => {
+  const both = normaliseExercise({ id: 'ex1', name: 'Cable Crossover', muscleGroups: ['Chest', 'Shoulders'] });
+  assert.deepEqual(both.muscleGroups, ['Chest', 'Shoulders']);
+});
+
+test('blanks and repeats are cleaned out of the list', () => {
+  assert.deepEqual(toMuscleGroups({ muscleGroups: ['Chest', '', 'Chest', '  Shoulders  ', null] }),
+    ['Chest', 'Shoulders']);
+});
+
+test('an exercise with no group at all still lands somewhere', () => {
+  assert.deepEqual(normaliseExercise({ id: 'ex1', name: 'Mystery' }).muscleGroups, ['Other']);
+  assert.deepEqual(normaliseExercise({ id: 'ex1', name: 'Mystery', muscleGroups: [] }).muscleGroups, ['Other']);
+});
+
+// An unknown group is carried rather than dropped: losing a label is worse than
+// showing one this build does not recognise.
+test('a group this build has never heard of survives the trip', () => {
+  assert.deepEqual(normaliseExercise({ id: 'ex1', name: 'Grip Work', muscleGroup: 'Neck' }).muscleGroups, ['Neck']);
+});
+
+test('the single-value alias always matches the head of the list', () => {
+  for (const input of [{ muscleGroup: 'Back' }, { muscleGroups: ['Back', 'Biceps'] }, {}]) {
+    const out = normaliseExercise({ id: 'ex1', name: 'x', ...input });
+    assert.equal(out.muscleGroup, out.muscleGroups[0]);
+  }
+});
+
+test('a backup written before the change still imports with its groups intact', () => {
+  const old = buildExport({
+    exercises: [{ id: 'ex1', name: 'Barbell Row', muscleGroup: 'Back', equipment: 'Barbell' }],
+    routines: [], workouts: [], bodyWeights: [],
+  });
+  assert.equal(validateExport(old).ok, true);
+  const [exercise] = normaliseExport(old).exercises;
+  assert.deepEqual(exercise.muscleGroups, ['Back']);
+  assert.equal(exercise.name, 'Barbell Row');
+});
+
+test('the seed library arrives in the new shape', () => {
+  const seeded = SEED_EXERCISES.map(normaliseExercise);
+  assert.equal(seeded.every((e) => Array.isArray(e.muscleGroups) && e.muscleGroups.length >= 1), true);
+  assert.equal(seeded.find((e) => e.id === 'barbell-bench-press').muscleGroups[0], 'Chest');
 });

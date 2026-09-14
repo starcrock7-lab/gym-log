@@ -26,6 +26,26 @@ export function openDb() {
           db.createObjectStore(STORE.kv, { keyPath: 'key' });
         }
         // falls through
+        case 1: {
+          // `muscleGroup` (one string) became `muscleGroups` (a list). Wrap what
+          // is already stored rather than re-seeding: these rows include the
+          // user's own custom exercises, which exist nowhere else.
+          //
+          // Runs inside the versionchange transaction, so either every row is
+          // migrated or the upgrade fails and the old database is left intact.
+          const store = request.transaction.objectStore(STORE.exercises);
+          store.openCursor().onsuccess = (cursorEvent) => {
+            const cursor = cursorEvent.target.result;
+            if (!cursor) return;
+            const row = cursor.value;
+            if (!Array.isArray(row.muscleGroups)) {
+              const single = String(row.muscleGroup || '').trim() || 'Other';
+              cursor.update({ ...row, muscleGroups: [single], muscleGroup: single });
+            }
+            cursor.continue();
+          };
+        }
+        // falls through
         default:
           break;
       }

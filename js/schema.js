@@ -2,7 +2,7 @@
 // Kept free of IndexedDB so it can be tested in Node.
 
 export const DB_NAME = 'personal-gym';
-export const DB_VERSION = 1;
+export const DB_VERSION = 2;   // 2: muscleGroup -> muscleGroups
 
 export const STORE = {
   exercises: 'exercises',
@@ -143,11 +143,34 @@ export function normaliseExport(payload) {
   };
 }
 
+// Accepts either shape — a single `muscleGroup` string from before the change,
+// or a `muscleGroups` list — and always yields a non-empty, de-duplicated list.
+// Values are not checked against MUSCLE_GROUPS: 'Other' was always a possible
+// stored value and an import may carry a group this build has never heard of,
+// and silently dropping someone's data is worse than carrying a stray label.
+export function toMuscleGroups(exercise) {
+  const raw = Array.isArray(exercise?.muscleGroups)
+    ? exercise.muscleGroups
+    : [exercise?.muscleGroup];
+  const groups = [];
+  for (const value of raw) {
+    const name = String(value ?? '').trim();
+    if (name && !groups.includes(name)) groups.push(name);
+  }
+  return groups.length ? groups : ['Other'];
+}
+
 export function normaliseExercise(exercise) {
+  const muscleGroups = toMuscleGroups(exercise);
   return {
     id: exercise.id,
     name: String(exercise.name || '').trim(),
-    muscleGroup: exercise.muscleGroup || 'Other',
+    muscleGroups,
+    // Transitional alias. Every read site still expects a single value; step 3
+    // of this change switches them to the list and this field goes away. It is
+    // derived here and nowhere else, and seeding, saveExercise and import all
+    // funnel through this function, so the two cannot drift apart.
+    muscleGroup: muscleGroups[0],
     equipment: exercise.equipment || 'Other',
     isBodyweight: Boolean(exercise.isBodyweight),
     isCustom: Boolean(exercise.isCustom),

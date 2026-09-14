@@ -2,10 +2,12 @@
 // forever — a routine written today must still resolve after any future edit
 // here, so rename freely but never change an id.
 
-const L = (name, muscleGroup, equipment, isBodyweight = false) => ({
+// `groups` takes one name or a list — an exercise that genuinely trains two
+// (a cable crossover, say) can name both without a second entry.
+const L = (name, groups, equipment, isBodyweight = false) => ({
   id: name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, ''),
   name,
-  muscleGroup,
+  muscleGroups: Array.isArray(groups) ? groups : [groups],
   equipment,
   isBodyweight,
   isCustom: false,
