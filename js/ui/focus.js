@@ -57,7 +57,7 @@ export function focusScreen(rawIndex) {
           exercise?.name || 'Unknown exercise')),
 
       h('div', { class: 'row wrap', style: { gap: '6px' } },
-        exercise ? h('span', { class: 'pill' }, exercise.muscleGroup) : null,
+        exercise ? exercise.muscleGroups.map((g) => h('span', { class: 'pill' }, g)) : null,
         exercise ? h('span', { class: 'pill' }, exercise.equipment) : null,
         exercise?.isBodyweight ? h('span', { class: 'pill pill-accent' }, 'Bodyweight') : null,
         done ? h('span', { class: 'pill pill-pr' }, `${done} done`) : null,

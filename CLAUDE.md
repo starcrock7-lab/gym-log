@@ -27,7 +27,7 @@ Git email must be `starcrock7@gmail.com`.
 ## Verify after every change
 
 ```sh
-npm test                                            # 113 tests, node --test
+npm test                                            # 117 tests, node --test
 for f in $(find js test scripts -name '*.js'); do node --check "$f"; done
 ```
 
@@ -164,13 +164,17 @@ The consequence to know: this mirrors the last session, so a session you cut
 short shrinks the rows next time. That is deliberate — it reflects what you did
 — but it is the thing to revisit if it ever feels wrong.
 
-### An exercise has a list of muscle groups, and one transitional alias
+### An exercise has a list of muscle groups
 
-`muscleGroups` is the real field. `muscleGroup` still exists as a derived alias
-equal to `muscleGroups[0]`, set inside `normaliseExercise` and nowhere else —
-seeding, `saveExercise` and import all funnel through that function, so the two
-cannot drift. It is scaffolding: once every read site uses the list, delete the
-alias and this paragraph.
+`muscleGroups` is the only field — the single `muscleGroup` is gone, and so is
+the alias that carried the transition. Filtering is `includes`, screens join the
+list, and focus mode renders one pill per group.
+
+Three places still read the old spelling and all three are backward
+compatibility rather than app code: the v1→v2 migration in `db.js`,
+`toMuscleGroups` accepting a backup file written before the change, and
+`share.js` decoding a link whose wire field `m` is still a bare string. Delete
+any of them and old data or old links break silently.
 
 `DB_VERSION` is 2. The `case 1:` arm of `onupgradeneeded` wraps each stored
 `muscleGroup` into a one-item list inside the versionchange transaction, so the

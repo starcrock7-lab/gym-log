@@ -200,3 +200,34 @@ test('a drop set takes no set number of its own', () => {
   assert.equal(workingSetNumber(sets, 3), 2);
   assert.equal(workingSetNumber(sets, 4), 3);
 });
+
+// ---------------------------------------------------------------------------
+// Muscle groups over the wire
+// ---------------------------------------------------------------------------
+
+test('a shared exercise carries every muscle group it trains', () => {
+  const library = new Map([
+    ['barbell-bench-press', exercise('barbell-bench-press', 'Barbell Bench Press',
+      { muscleGroups: ['Chest', 'Shoulders'] })],
+    ['ex_custom1', exercise('ex_custom1', 'Incline Machine Press')],
+  ]);
+  const decoded = decodeShare(encodeShare(buildSharePayload(routine, library)));
+  const plan = planImport(decoded, [], []);
+  assert.deepEqual(plan.items[0].definition.muscleGroups, ['Chest', 'Shoulders']);
+});
+
+// Links made before the list existed put a single string on the wire. They must
+// still open, or every link already sent to someone breaks.
+test('a link made before this change still opens', () => {
+  const old = buildSharePayload(routine, senderLibrary);
+  for (const entry of old.e) entry.x.m = 'Back';          // the old wire shape
+  const plan = planImport(decodeShare(encodeShare(old)), [], []);
+  assert.deepEqual(plan.items[0].definition.muscleGroups, ['Back']);
+});
+
+test('an entry with no groups at all still lands somewhere', () => {
+  const payloadNoGroups = buildSharePayload(routine, senderLibrary);
+  for (const entry of payloadNoGroups.e) delete entry.x.m;
+  const plan = planImport(decodeShare(encodeShare(payloadNoGroups)), [], []);
+  assert.deepEqual(plan.items[0].definition.muscleGroups, ['Other']);
+});

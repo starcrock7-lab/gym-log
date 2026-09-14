@@ -25,8 +25,8 @@ export function exerciseListScreen() {
     const q = query.trim().toLowerCase();
     const matched = state.exercises
       .filter((e) => !e.archived)
-      .filter((e) => group === 'All' || e.muscleGroup === group)
-      .filter((e) => !q || `${e.name} ${e.muscleGroup} ${e.equipment}`.toLowerCase().includes(q))
+      .filter((e) => group === 'All' || e.muscleGroups.includes(group))
+      .filter((e) => !q || `${e.name} ${e.muscleGroups.join(' ')} ${e.equipment}`.toLowerCase().includes(q))
       .sort((a, b) => (counts.get(b.id) || 0) - (counts.get(a.id) || 0) || a.name.localeCompare(b.name));
 
     list.replaceChildren(...(matched.length
@@ -34,7 +34,7 @@ export function exerciseListScreen() {
           h('a', { class: 'card card-tight card-link spread', href: `#/exercise/${exercise.id}` },
             h('div', { class: 'grow' },
               h('div', { class: 'truncate' }, exercise.name),
-              h('div', { class: 'muted small' }, `${exercise.muscleGroup} · ${exercise.equipment}`),
+              h('div', { class: 'muted small' }, `${exercise.muscleGroups.join(' · ')} · ${exercise.equipment}`),
             ),
             counts.get(exercise.id)
               ? h('span', { class: 'pill' }, `${counts.get(exercise.id)}×`)
@@ -119,7 +119,7 @@ export function exerciseScreen(id) {
 
   return screen(exercise.name, {
     back: '#/exercises',
-    subtitle: `${exercise.muscleGroup} · ${exercise.equipment}`,
+    subtitle: `${exercise.muscleGroups.join(' · ')} · ${exercise.equipment}`,
     action: h('button', { class: 'icon-btn', 'aria-label': 'Options', onclick: () => exerciseOptions(exercise) }, icon('grip')),
   },
     verdictCard(verdict),

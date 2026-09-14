@@ -20,8 +20,8 @@ export function exercisePicker({ multi = false, exclude = [], title = 'Add exerc
     const q = query.trim().toLowerCase();
     return state.exercises
       .filter((e) => !e.archived && !excluded.has(e.id))
-      .filter((e) => group === 'All' || e.muscleGroup === group)
-      .filter((e) => !q || `${e.name} ${e.muscleGroup} ${e.equipment}`.toLowerCase().includes(q))
+      .filter((e) => group === 'All' || e.muscleGroups.includes(group))
+      .filter((e) => !q || `${e.name} ${e.muscleGroups.join(' ')} ${e.equipment}`.toLowerCase().includes(q))
       .sort((a, b) => a.name.localeCompare(b.name));
   };
 
@@ -42,7 +42,7 @@ export function exercisePicker({ multi = false, exclude = [], title = 'Add exerc
           },
             h('div', { class: 'grow' },
               h('div', { class: 'truncate' }, exercise.name),
-              h('div', { class: 'muted small' }, `${exercise.muscleGroup} · ${exercise.equipment}`),
+              h('div', { class: 'muted small' }, `${exercise.muscleGroups.join(' · ')} · ${exercise.equipment}`),
             ),
             on ? h('span', { class: 'pill pill-pr' }, icon('check')) : null,
           );

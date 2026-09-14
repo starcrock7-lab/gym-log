@@ -12,6 +12,8 @@
 //
 // Pure: no DOM, no database. The UI in ui/share.js drives it.
 
+import { toMuscleGroups } from './schema.js';
+
 export const SHARE_FORMAT = 'gymlog-split';
 export const SHARE_VERSION = 1;
 
@@ -54,7 +56,7 @@ export function buildSharePayload(routine, exercisesById) {
         if (planned.note) entry.o = planned.note;
         entry.x = {
           n: exercise?.name || planned.exerciseId,
-          m: exercise?.muscleGroup || 'Other',
+          m: toMuscleGroups(exercise || {}),
           q: exercise?.equipment || 'Other',
           ...(exercise?.isBodyweight ? { b: 1 } : {}),
         };
@@ -130,7 +132,9 @@ export function planImport(payload, locals = []) {
     const definition = {
       id: entry.i,
       name: entry.x?.n || entry.i,
-      muscleGroup: entry.x?.m || 'Other',
+      muscleGroups: toMuscleGroups(
+        Array.isArray(entry.x?.m) ? { muscleGroups: entry.x.m } : { muscleGroup: entry.x?.m },
+      ),
       equipment: entry.x?.q || 'Other',
       isBodyweight: Boolean(entry.x?.b),
     };

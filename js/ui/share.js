@@ -106,7 +106,7 @@ export function importScreen(code) {
             h('div', { class: 'grow' },
               h('div', { class: 'truncate' }, item.definition.name),
               h('div', { class: 'dim small' },
-                `${item.definition.muscleGroup} · ${item.targetSets} × ${item.repsLow}–${item.repsHigh}`),
+                `${item.definition.muscleGroups.join(' · ')} · ${item.targetSets} × ${item.repsLow}–${item.repsHigh}`),
             ),
             item.action === 'create'
               ? h('span', { class: 'pill' }, 'New')
@@ -154,7 +154,7 @@ async function applyImport(plan) {
     if (item.resolved) continue;
     const created = await saveExercise({
       name: item.definition.name,
-      muscleGroup: item.definition.muscleGroup,
+      muscleGroups: item.definition.muscleGroups,
       equipment: item.definition.equipment,
       isBodyweight: item.definition.isBodyweight,
       isCustom: true,

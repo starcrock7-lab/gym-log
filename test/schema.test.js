@@ -255,11 +255,10 @@ test('a group this build has never heard of survives the trip', () => {
   assert.deepEqual(normaliseExercise({ id: 'ex1', name: 'Grip Work', muscleGroup: 'Neck' }).muscleGroups, ['Neck']);
 });
 
-test('the single-value alias always matches the head of the list', () => {
-  for (const input of [{ muscleGroup: 'Back' }, { muscleGroups: ['Back', 'Biceps'] }, {}]) {
-    const out = normaliseExercise({ id: 'ex1', name: 'x', ...input });
-    assert.equal(out.muscleGroup, out.muscleGroups[0]);
-  }
+test('the old single-value field is not written back out', () => {
+  const out = normaliseExercise({ id: 'ex1', name: 'x', muscleGroup: 'Back' });
+  assert.deepEqual(out.muscleGroups, ['Back']);
+  assert.equal('muscleGroup' in out, false);
 });
 
 test('a backup written before the change still imports with its groups intact', () => {

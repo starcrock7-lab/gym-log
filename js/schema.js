@@ -166,11 +166,6 @@ export function normaliseExercise(exercise) {
     id: exercise.id,
     name: String(exercise.name || '').trim(),
     muscleGroups,
-    // Transitional alias. Every read site still expects a single value; step 3
-    // of this change switches them to the list and this field goes away. It is
-    // derived here and nowhere else, and seeding, saveExercise and import all
-    // funnel through this function, so the two cannot drift apart.
-    muscleGroup: muscleGroups[0],
     equipment: exercise.equipment || 'Other',
     isBodyweight: Boolean(exercise.isBodyweight),
     isCustom: Boolean(exercise.isCustom),

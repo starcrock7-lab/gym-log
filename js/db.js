@@ -40,7 +40,7 @@ export function openDb() {
             const row = cursor.value;
             if (!Array.isArray(row.muscleGroups)) {
               const single = String(row.muscleGroup || '').trim() || 'Other';
-              cursor.update({ ...row, muscleGroups: [single], muscleGroup: single });
+              cursor.update({ ...row, muscleGroups: [single] });
             }
             cursor.continue();
           };
