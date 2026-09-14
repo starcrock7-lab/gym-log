@@ -5,7 +5,7 @@ import {
   formatWeight, formatVolume, isConfident,
 } from '../calc.js';
 import { lineChart } from '../charts.js';
-import { newExerciseSheet } from './pickers.js';
+import { newExerciseSheet, muscleGroupField } from './pickers.js';
 import { MUSCLE_GROUPS, EQUIPMENT } from '../schema.js';
 
 export function exerciseListScreen() {
@@ -192,14 +192,14 @@ function statCard(label, value, sub) {
 
 function exerciseOptions(exercise) {
   const name = h('input', { class: 'input', value: exercise.name });
-  const group = h('select', { class: 'input' }, MUSCLE_GROUPS.map((g) => h('option', { value: g, selected: g === exercise.muscleGroup }, g)));
+  const groups = muscleGroupField(exercise.muscleGroups);
   const equipment = h('select', { class: 'input' }, EQUIPMENT.map((g) => h('option', { value: g, selected: g === exercise.equipment }, g)));
   const rest = h('input', { class: 'input', type: 'number', inputmode: 'numeric', placeholder: `Default (${state.settings.defaultRestSec}s)`, value: exercise.defaultRestSec ?? '' });
   const bodyweight = h('input', { type: 'checkbox', checked: exercise.isBodyweight });
 
   sheet('Edit exercise', frag(
     h('div', { class: 'field' }, h('label', {}, 'Name'), name),
-    h('div', { class: 'field' }, h('label', {}, 'Muscle group'), group),
+    h('div', { class: 'field' }, h('label', {}, 'Muscle groups'), groups.node),
     h('div', { class: 'field' }, h('label', {}, 'Equipment'), equipment),
     h('div', { class: 'field' }, h('label', {}, 'Rest between sets (seconds)'), rest),
     h('label', { class: 'switch' }, h('span', {}, 'Loaded by bodyweight'), bodyweight),
@@ -223,7 +223,7 @@ function exerciseOptions(exercise) {
           await saveExercise({
             ...exercise,
             name: name.value.trim() || exercise.name,
-            muscleGroup: group.value,
+            muscleGroups: groups.read(),
             equipment: equipment.value,
             defaultRestSec: Number(rest.value) || null,
             isBodyweight: bodyweight.checked,

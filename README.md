@@ -238,5 +238,6 @@ test/                   node --test
 
 ## Session log
 
+- 2026-09-13 · pick several muscle groups per exercise (both forms; filters still read the first)
 - 2026-09-13 · set kinds survive into the next session — a drop set opens as a drop set again
 - 2026-09-13 · an exercise can hold several muscle groups (data shape + v1→v2 migration) · b6e0796
