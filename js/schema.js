@@ -243,9 +243,11 @@ export function setsForNextSession(previousSets, fallbackCount = 3) {
     return normaliseSet({
       weightLb: before?.weightLb ?? 0,
       reps: before?.reps ?? 0,
-      // A drop set hangs off the set before it and should not be recreated as
-      // one on a fresh session; anything else keeps its kind.
-      type: before?.type === 'warmup' ? 'warmup' : 'working',
+      // Keep the kind you actually did. A drop set opens as a drop set and a
+      // set to failure as one, so a new session starts in the shape of the last
+      // one. normaliseSet turns anything it does not recognise back to
+      // 'working', and a row with no history behind it has no type to keep.
+      type: before?.type,
       done: false,
     });
   });

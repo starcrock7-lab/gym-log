@@ -235,3 +235,8 @@ js/
 scripts/make-icons.mjs  regenerates the app icons
 test/                   node --test
 ```
+
+## Session log
+
+- 2026-09-13 · set kinds survive into the next session — a drop set opens as a drop set again
+- 2026-09-13 · an exercise can hold several muscle groups (data shape + v1→v2 migration) · b6e0796

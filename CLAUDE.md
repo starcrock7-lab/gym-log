@@ -155,9 +155,10 @@ under a differently-generated id. There is a test for that; don't remove it.
 `setsForNextSession` in `schema.js` builds an exercise's opening rows from the
 sets actually completed last time — six sets stay six sets, each carrying the
 weight and reps used on it. A routine's `targetSets` is only the starting plan,
-used until there is history. Warm-ups keep their kind; a drop set comes back as
-a working set, because a drop hangs off the set before it and recreating one on
-an empty session would be meaningless.
+used until there is history. Every set keeps the kind it was — warm-up, drop,
+failure — so a session opens in the shape of the last one. Flattening drops back
+to working was the first attempt and it was wrong: the drop set is part of how
+you trained the exercise, and losing it made the app forget the session's shape.
 
 The consequence to know: this mirrors the last session, so a session you cut
 short shrinks the rows next time. That is deliberate — it reflects what you did

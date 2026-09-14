@@ -204,9 +204,14 @@ test('nothing comes back already ticked', () => {
   assert.equal(next.some((s) => s.done), false);
 });
 
-test('a warm-up stays a warm-up, and a drop set does not come back as one', () => {
-  const next = setsForNextSession([did(95, 10, 'warmup'), did(135, 6), did(110, 8, 'drop')], 3);
-  assert.deepEqual(next.map((s) => s.type), ['warmup', 'working', 'working']);
+test('every set comes back as the kind you actually did', () => {
+  const next = setsForNextSession(
+    [did(95, 10, 'warmup'), did(135, 6), did(110, 8, 'drop'), did(135, 3, 'failure')], 3);
+  assert.deepEqual(next.map((s) => s.type), ['warmup', 'working', 'drop', 'failure']);
+});
+
+test('a row with no history behind it is a plain working set', () => {
+  assert.deepEqual(setsForNextSession([], 2).map((s) => s.type), ['working', 'working']);
 });
 
 test('with no history the routine plan decides how many rows there are', () => {
