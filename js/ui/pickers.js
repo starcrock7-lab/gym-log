@@ -1,6 +1,8 @@
 import { h, sheet, closeSheet, icon, frag, mount } from '../dom.js';
 import { state, saveExercise } from '../store.js';
-import { platesFor, formatWeight } from '../calc.js';
+import {
+  formatWeight, platesOnSide, loadedTotalLb, addPlate, removePlate, plateOptions,
+} from '../calc.js';
 import { MUSCLE_GROUPS, EQUIPMENT } from '../schema.js';
 
 // Pick one or more exercises. Search matches name, muscle group and equipment,
@@ -151,29 +153,68 @@ export function newExerciseSheet(prefillName = '', onCreated) {
 }
 
 // What to hang on the bar. Honest when a weight cannot be made.
-export function plateSheet(targetLb) {
-  const { barWeightLb, plates } = state.settings;
-  const result = platesFor(targetLb, barWeightLb, plates);
+// Load the bar by tapping plates. One side is drawn because one side is what
+// you load; the total counts both. Tap a size to add a pair, tap a plate on the
+// bar to take it off along with everything outside it.
+//
+// Opens on whatever weight is already in the box, so adjusting 225 to 235 is two
+// taps rather than a rebuild. `onType` is passed when it was opened from the
+// weight box, and hands the box back to the keyboard.
+export function plateLoaderSheet({ weightLb, onUse, onType }) {
+  const { barWeightLb, plates: inventory } = state.settings;
+  let plates = platesOnSide(Number(weightLb) || barWeightLb, barWeightLb, inventory);
 
-  const body = result.reason === 'below-bar'
-    ? h('p', { class: 'muted' }, `${formatWeight(targetLb)} lb is lighter than the ${formatWeight(barWeightLb)} lb bar on its own.`)
-    : frag(
-        h('div', { class: 'plate-visual' },
-          h('div', { class: 'plate-bar' }),
-          result.perSide.flatMap((plate) =>
-            Array.from({ length: plate.count }, () =>
-              h('div', { class: 'plate', style: { height: `${Math.min(74, 26 + plate.lb * 0.85)}px` } }, formatWeight(plate.lb)))),
-          h('div', { class: 'plate-bar' }),
-        ),
-        h('p', { class: 'center muted small' }, 'Per side, biggest plate first'),
-        result.perSide.length
-          ? h('p', { class: 'center' }, result.perSide.map((p) => `${p.count} × ${formatWeight(p.lb)}`).join('  +  '))
-          : h('p', { class: 'center muted' }, 'Empty bar'),
-        result.reachable
-          ? null
-          : h('p', { class: 'card', style: { borderColor: 'var(--warn)' } },
-              `Closest you can load is ${formatWeight(result.achievedLb)} lb — ${formatWeight(Math.abs(result.remainderLb))} lb short. Add smaller plates in Settings if you own them.`),
-      );
+  // Height tracks plate size, so a glance tells 45s from 10s before you read them.
+  const plateHeight = (lb) => Math.round(Math.min(96, 32 + lb * 1.4));
 
-  sheet(`${formatWeight(targetLb)} lb`, body, { actions: [h('button', { class: 'btn btn-block', onclick: closeSheet }, 'Close')] });
+  const total = h('div', { class: 'loader-total', 'aria-live': 'polite' });
+  const bar = h('div', { class: 'loader-bar' });
+  const adders = h('div', { class: 'loader-adders' });
+  const use = h('button', {
+    class: 'btn btn-primary',
+    onclick: () => { closeSheet(); onUse(loadedTotalLb(barWeightLb, plates)); },
+  });
+
+  const render = () => {
+    const lb = loadedTotalLb(barWeightLb, plates);
+    total.textContent = `${formatWeight(lb)} lb`;
+    use.textContent = `Use ${formatWeight(lb)} lb`;
+
+    bar.replaceChildren(
+      h('div', { class: 'loader-sleeve', 'aria-hidden': 'true' }),
+      ...plates.map((p, i) => h('button', {
+        class: 'loader-plate', type: 'button',
+        'aria-label': i < plates.length - 1
+          ? `Take off the ${formatWeight(p)} and the plates outside it`
+          : `Take off the ${formatWeight(p)}`,
+        onclick: () => { plates = removePlate(plates, i); render(); },
+      }, h('span', { style: { height: `${plateHeight(p)}px` } }, formatWeight(p)))),
+      // Native replaceChildren stringifies null into a visible "null"; h() skips
+      // it, this does not.
+      ...(plates.length ? [] : [h('p', { class: 'loader-empty muted small' }, 'Empty bar')]),
+    );
+
+    adders.replaceChildren(...plateOptions(inventory, plates).map(({ lb: p, available }) =>
+      h('button', {
+        class: 'chip', type: 'button', disabled: !available,
+        'aria-label': `Add a pair of ${formatWeight(p)}s`,
+        onclick: () => { plates = addPlate(plates, p); render(); },
+      }, `+${formatWeight(p)}`)));
+  };
+  render();
+
+  sheet('Load the bar', frag(
+    total,
+    h('p', { class: 'center muted small' },
+      `${formatWeight(barWeightLb)} lb bar · one side shown · tap a plate to take it off`),
+    h('div', { class: 'loader-bar-wrap' }, bar),
+    adders,
+  ), {
+    actions: [
+      onType
+        ? h('button', { class: 'btn', onclick: () => { closeSheet(); onType(); } }, 'Type it')
+        : h('button', { class: 'btn', onclick: closeSheet }, 'Cancel'),
+      use,
+    ],
+  });
 }

@@ -2,10 +2,10 @@
 // implementation of "log a set" so the two lenses can never drift apart.
 
 import { h, frag, icon, sheet, closeSheet, toast } from '../dom.js';
-import { state, mutateActive, startRest } from '../store.js';
+import { state, mutateActive, startRest, exerciseById } from '../store.js';
 import { formatWeight, effectiveLoadLb, estimate1RM, personalRecords } from '../calc.js';
 import { normaliseSet } from '../schema.js';
-import { plateSheet } from './pickers.js';
+import { plateLoaderSheet } from './pickers.js';
 import { repaintTimer } from './timer.js';
 
 // Callbacks the host screen supplies so the row can nudge it without knowing
@@ -21,12 +21,27 @@ export function setRow({ entry, entryIndex, set, setIndex, previous, exercise, b
   // untouched, so the caret does not jump while you are typing.
   const write = (patch) => mutateActive((w) => Object.assign(w.entries[entryIndex].sets[setIndex], patch));
 
+  // On a barbell the weight box opens the bar loader instead of the keyboard:
+  // you build the weight from plates, and "Type it" hands the box back. The
+  // loader writes through the same silent path as typing, so no redraw lands
+  // under your thumb.
+  const isBarbell = exercise?.equipment === 'Barbell';
   const weight = h('input', {
     class: `set-input${set.done ? ' is-done' : ''}`, type: 'number', inputmode: 'decimal', step: '2.5', min: '0',
     value: set.weightLb || '',
     placeholder: previousSet ? formatWeight(previousSet.weightLb) : '0',
-    onfocus: (e) => e.target.select(),
+    readOnly: isBarbell,
+    'aria-label': isBarbell ? 'Weight — tap to load the bar' : 'Weight',
+    onfocus: (e) => { if (!e.target.readOnly) e.target.select(); },
     onchange: (e) => write({ weightLb: Number(e.target.value) || 0 }),
+    onclick: (e) => {
+      if (!e.target.readOnly) return;
+      plateLoaderSheet({
+        weightLb: Number(e.target.value) || previousSet?.weightLb || 0,
+        onUse: (lb) => { weight.value = formatWeight(lb); write({ weightLb: lb }); },
+        onType: () => { weight.readOnly = false; weight.focus(); weight.select(); },
+      });
+    },
   });
 
   const reps = h('input', {
@@ -166,7 +181,18 @@ function setTypeSheet(entryIndex, setIndex, onStructuralChange) {
           set.type === type ? icon('check') : null)),
     ),
 
-    h('button', { class: 'btn btn-block', onclick: () => plateSheet(set.weightLb) }, 'Plate calculator'),
+    exerciseById(state.active.entries[entryIndex].exerciseId)?.equipment === 'Barbell'
+      ? h('button', {
+          class: 'btn btn-block',
+          onclick: () => plateLoaderSheet({
+            weightLb: set.weightLb,
+            onUse: (lb) => {
+              mutateActive((w) => { w.entries[entryIndex].sets[setIndex].weightLb = lb; }, { redraw: true });
+              onStructuralChange?.();
+            },
+          }),
+        }, 'Load the bar')
+      : null,
 
     h('button', {
       class: 'btn btn-danger btn-block',

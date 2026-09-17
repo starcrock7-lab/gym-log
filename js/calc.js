@@ -269,6 +269,15 @@ export function roundToStep(value, step = WEIGHT_STEP_LB) {
 // `inventory` is a list of numbers (assume plenty of each) or of
 // { lb, pairs } when you only own so many. Returns exactly what to hang on one
 // side, and is honest about a target it cannot hit instead of rounding quietly.
+// Plates you own, heaviest first. A plain number means "plenty of these";
+// { lb, pairs } means you only own so many.
+function normaliseInventory(inventory = []) {
+  return inventory
+    .map((p) => (typeof p === 'number' ? { lb: p, pairs: Infinity } : { lb: Number(p.lb), pairs: Number(p.pairs ?? Infinity) }))
+    .filter((p) => p.lb > 0 && p.pairs > 0)
+    .sort((a, b) => b.lb - a.lb);
+}
+
 export function platesFor(targetLb, barLb = 45, inventory = [45, 35, 25, 10, 5, 2.5]) {
   const target = Number(targetLb) || 0;
   const bar = Number(barLb) || 0;
@@ -278,10 +287,7 @@ export function platesFor(targetLb, barLb = 45, inventory = [45, 35, 25, 10, 5, 
   }
 
   const perSideTarget = (target - bar) / 2;
-  const plates = inventory
-    .map((p) => (typeof p === 'number' ? { lb: p, pairs: Infinity } : { lb: Number(p.lb), pairs: Number(p.pairs ?? Infinity) }))
-    .filter((p) => p.lb > 0 && p.pairs > 0)
-    .sort((a, b) => b.lb - a.lb);
+  const plates = normaliseInventory(inventory);
 
   const perSide = [];
   let remaining = perSideTarget;
@@ -307,6 +313,44 @@ export function platesFor(targetLb, barLb = 45, inventory = [45, 35, 25, 10, 5, 
     remainderLb,
     barLb: bar,
   };
+}
+
+
+// ---------------------------------------------------------------------------
+// The bar loader
+// ---------------------------------------------------------------------------
+//
+// One side of the bar as a flat list of plates, heaviest nearest the collar —
+// the order you actually slide them on. The total counts both sides.
+
+export function platesOnSide(targetLb, barLb, inventory) {
+  return platesFor(targetLb, barLb, inventory).perSide
+    .flatMap(({ lb, count }) => Array.from({ length: count }, () => lb));
+}
+
+export function loadedTotalLb(barLb, plates) {
+  const total = (Number(barLb) || 0) + 2 * plates.reduce((sum, lb) => sum + lb, 0);
+  return Math.round(total * 100) / 100;
+}
+
+// Wherever you tap, the new plate lands in weight order, heaviest inside.
+export function addPlate(plates, lb) {
+  return [...plates, lb].sort((a, b) => b - a);
+}
+
+// A plate comes off with everything outside it. You cannot pull an inner plate
+// out from behind outer ones, and letting the screen do it would draw a bar
+// nobody could actually load.
+export function removePlate(plates, index) {
+  return plates.slice(0, index);
+}
+
+// Each plate size you own, and whether another pair of it is left to add.
+export function plateOptions(inventory, plates) {
+  return normaliseInventory(inventory).map(({ lb, pairs }) => ({
+    lb,
+    available: plates.filter((p) => p === lb).length < pairs,
+  }));
 }
 
 // ---------------------------------------------------------------------------

@@ -98,6 +98,17 @@ All of it lives in `js/calc.js` as pure functions, and all of it is tested.
 - **The plate calculator** says when a weight cannot be made and by how much, instead of
   quietly rounding. 192.5 lb on a 45 lb bar needs 1.25s, and it will tell you so.
 
+## Loading the bar
+
+On a barbell exercise, tap the weight box and a bar opens instead of the keyboard. Tap
+**+45**, **+25** and so on to add a pair; the total counts both sides and updates as you
+go. Tap a plate on the bar to take it off — along with everything outside it, since you
+can't pull an inner plate out from behind outer ones. **Use 225 lb** fills the box, and
+**Type it** hands the box back to the keyboard. It opens on whatever weight is already
+there, so nudging 225 to 235 is two taps. Your bar weight and the plates you own come
+from Settings, and you can't add more pairs than you have. Dumbbells, cables and machines
+still type as normal.
+
 ---
 
 ## Two ways to run a workout
@@ -255,6 +266,8 @@ test/                   node --test
 
 ## Session log
 
+- 2026-09-16 · on a barbell, tap the weight box to load plates instead of typing
+- 2026-09-16 · a backup test no longer fails at random
 - 2026-09-16 · restore a routine to how you did it in a past session
 - 2026-09-16 · superset and AMRAP set kinds; superset skips the rest timer
 - 2026-09-13 · an exercise now shows up under every muscle group it trains

@@ -13,6 +13,11 @@ import {
   trendVerdict,
   sessionTotals,
   platesFor,
+  platesOnSide,
+  loadedTotalLb,
+  addPlate,
+  removePlate,
+  plateOptions,
   roundToStep,
   formatWeight,
   formatVolume,
@@ -374,4 +379,46 @@ test('a superset and an AMRAP set both count as working sets', () => {
   assert.equal(isWorkingSet({ type: 'superset', done: true, weightLb: 50, reps: 10 }), true);
   assert.equal(isWorkingSet({ type: 'amrap', done: true, weightLb: 135, reps: 14 }), true);
   assert.equal(isWorkingSet({ type: 'amrap', done: false, weightLb: 135, reps: 14 }), false);
+});
+
+// ---------------------------------------------------------------------------
+// The bar loader
+// ---------------------------------------------------------------------------
+
+const STANDARD = [45, 35, 25, 10, 5, 2.5];
+
+test('the loader opens with the plates for the weight already in the box', () => {
+  assert.deepEqual(platesOnSide(225, 45, STANDARD), [45, 45]);
+  assert.deepEqual(platesOnSide(185, 45, STANDARD), [45, 25]);
+  assert.deepEqual(platesOnSide(45, 45, STANDARD), []);
+});
+
+test('the total counts both sides of the bar', () => {
+  assert.equal(loadedTotalLb(45, [45, 45]), 225);
+  assert.equal(loadedTotalLb(45, []), 45);
+  assert.equal(loadedTotalLb(45, [2.5, 2.5, 2.5]), 60);
+});
+
+test('a plate lands in weight order wherever you add it, heaviest inside', () => {
+  assert.deepEqual(addPlate([45, 10], 25), [45, 25, 10]);
+  assert.deepEqual(addPlate([], 45), [45]);
+});
+
+// You cannot pull an inner plate out from behind outer ones.
+test('taking a plate off takes everything outside it with it', () => {
+  assert.deepEqual(removePlate([45, 25, 10, 5], 1), [45]);
+  assert.deepEqual(removePlate([45, 25, 10, 5], 3), [45, 25, 10]);
+  assert.deepEqual(removePlate([45, 25], 0), [], 'the innermost plate clears the bar');
+});
+
+test('you cannot add more pairs of a plate than you own', () => {
+  const owned = [{ lb: 45, pairs: 2 }, 25];
+  const options = plateOptions(owned, [45, 45]);
+  assert.deepEqual(options, [{ lb: 45, available: false }, { lb: 25, available: true }]);
+});
+
+test('a weight the plates cannot make opens at the closest load below it', () => {
+  const plates = platesOnSide(192.5, 45, STANDARD);
+  assert.ok(loadedTotalLb(45, plates) <= 192.5);
+  assert.equal(loadedTotalLb(45, plates), 190);
 });

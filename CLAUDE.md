@@ -27,7 +27,7 @@ Git email must be `starcrock7@gmail.com`.
 ## Verify after every change
 
 ```sh
-npm test                                            # 126 tests, node --test
+npm test                                            # 132 tests, node --test
 for f in $(find js test scripts -name '*.js'); do node --check "$f"; done
 ```
 
@@ -316,6 +316,18 @@ show a numeric keypad. Nothing may shift under a thumb mid-set.
   a missing Finish affordance look exactly like a broken history feature — keep
   finishing obvious, and don't let Discard be the only action at the foot of the
   workout screen.
+- **On a barbell, the weight box opens the bar loader, not the keyboard.** The input
+  is `readOnly` and its click opens `plateLoaderSheet`; "Type it" clears `readOnly`
+  and focuses it. The loader writes back through the same silent `write()` as typing,
+  so the typing-never-redraws rule still holds. Only `equipment === 'Barbell'` gets
+  it — dumbbells and machines type as before. The loader maths (`platesOnSide`,
+  `addPlate`, `removePlate`, `plateOptions`) is pure and tested in `calc.js`: one side
+  is shown because one side is what you load, a plate comes off with everything
+  outside it, and you cannot add more pairs than you own.
+- **Native `el.replaceChildren(null)` renders the text "null".** `h()` and `frag()`
+  skip null children; the DOM method does not. Pass `...(cond ? [node] : [])`, never
+  a bare `cond ? node : null`, to any native child-list call. This put a "null"
+  behind the barbell once and looked fine in the source.
 - **`platesFor` is allowed to say no.** 192.5 lb on a 45 lb bar needs 1.25s. It
   reports the shortfall rather than rounding. Don't "fix" that.
 
