@@ -41,7 +41,10 @@ test('the ciphertext gives nothing away', async () => {
   const envelope = await encryptPayload(samplePayload(), 'hunter2');
   const serialised = JSON.stringify(envelope);
   assert.ok(!serialised.includes('Bench Press'), 'exercise names must not be readable');
-  assert.ok(!serialised.includes('225'), 'weights must not be readable');
+  // Checked by field name, not by the number: ciphertext is random base64, and a
+  // bare "225" turns up in it by chance often enough to fail this test for
+  // nothing. An 8-letter key name will not.
+  assert.ok(!serialised.includes('weightLb'), 'weights must not be readable');
   assert.ok(!serialised.includes('hunter2'), 'the passphrase is never stored in the envelope');
 });
 
