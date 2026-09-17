@@ -27,7 +27,7 @@ Git email must be `starcrock7@gmail.com`.
 ## Verify after every change
 
 ```sh
-npm test                                            # 120 tests, node --test
+npm test                                            # 126 tests, node --test
 for f in $(find js test scripts -name '*.js'); do node --check "$f"; done
 ```
 
@@ -198,6 +198,20 @@ weight they open with, from your last session. That is not the routine changing;
 `routine.exercises` is untouched. Verified by driving it: swap, log, finish,
 start the same routine again, and both the screen and the stored routine come
 back to the original exercise.
+
+### Restoring a routine reads history; it stores nothing new
+
+"Restore from a previous workout" in the routine editor needs no versioning: every
+finished session already keeps its `routineId` and full entry list, so a past
+version of a routine *is* a past session of it. `exercisesFromSession` in
+`schema.js` rebuilds the list — exercises in the order you did them, the sets you
+logged — and keeps rep range, rest and note from the current routine wherever the
+exercise is still in it. It is an explicit, confirmed edit, so it does not break
+"a routine only changes when you edit it".
+
+An archived exercise counts as gone and is left out and named in the
+confirmation. Deleting an exercise that appears in any session archives it
+rather than removing it, so "deleted" in practice always means archived.
 
 ### Swapping an exercise never inherits the old one's numbers
 

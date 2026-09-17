@@ -1,5 +1,6 @@
-import { h, frag, icon, screen, empty, sheet, closeSheet, confirmSheet, toast } from '../dom.js';
-import { state, routineById, exerciseName, saveRoutine, removeRoutine } from '../store.js';
+import { h, frag, icon, screen, empty, sheet, closeSheet, confirmSheet, toast, relativeDay } from '../dom.js';
+import { state, routineById, exerciseName, exerciseById, finishedWorkouts, saveRoutine, removeRoutine } from '../store.js';
+import { exercisesFromSession } from '../schema.js';
 import { exercisePicker } from './pickers.js';
 import { shareRoutineSheet, pasteSplitSheet } from './share.js';
 
@@ -57,6 +58,47 @@ export function routineScreen(id) {
     saveRoutine(draft);
   };
 
+  // Every finished session remembers the routine it was started from, so the
+  // past versions of this routine are simply its history — nothing extra is
+  // stored to make restoring possible.
+  const pastSessions = () => finishedWorkouts().filter((w) => w.routineId === draft.id);
+  const dateOf = (iso) => new Date(iso).toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' });
+
+  const restoreSheet = () => sheet('Restore from a previous workout', h('div', { class: 'list' },
+    pastSessions().map((session) =>
+      h('button', { class: 'list-item', onclick: () => { closeSheet(); confirmRestore(session); } },
+        h('div', { class: 'grow' },
+          h('div', {}, `${relativeDay(session.finishedAt)} · ${dateOf(session.finishedAt)}`),
+          h('div', { class: 'muted small truncate' },
+            session.entries.map((e) => exerciseName(e.exerciseId)).join(' · ')),
+        ),
+        h('span', { class: 'pill' }, String(session.entries.length)),
+      ))));
+
+  const confirmRestore = async (session) => {
+    // Archived counts as gone: it is how an exercise you deleted is kept for
+    // your history's sake, and restoring it would put it back in a routine.
+    const available = (id) => { const e = exerciseById(id); return Boolean(e && !e.archived); };
+    const { exercises, skipped } = exercisesFromSession(session, draft.exercises, available);
+    if (!exercises.length) {
+      toast('Nothing from that workout is still in your library', { error: true });
+      return;
+    }
+    const left = skipped.length
+      ? ` Left out, no longer in your library: ${skipped.map(exerciseName).join(', ')}.`
+      : '';
+    const ok = await confirmSheet(
+      `Restore to ${dateOf(session.finishedAt)}?`,
+      `This routine's exercises become ${exercises.map((e) => exerciseName(e.exerciseId)).join(', ')}.${left} Workouts you already logged are not changed.`,
+      { confirmLabel: 'Restore', danger: true },
+    );
+    if (!ok) return;
+    draft.exercises = exercises;
+    persist();
+    render();
+    toast('Routine restored');
+  };
+
   const render = () => {
     body.replaceChildren(
       h('div', { class: 'field' },
@@ -101,6 +143,12 @@ export function routineScreen(id) {
         disabled: !draft.exercises.length,
         onclick: () => shareRoutineSheet(draft),
       }, icon('share'), 'Share this split'),
+
+      h('button', {
+        class: 'btn btn-block',
+        disabled: !pastSessions().length,
+        onclick: () => restoreSheet(),
+      }, icon('history'), 'Restore from a previous workout'),
 
       h('button', {
         class: 'btn btn-danger btn-block',

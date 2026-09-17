@@ -248,6 +248,40 @@ export function setsForNextSession(previousSets, fallbackCount = 3) {
   });
 }
 
+// Rebuilds a routine's exercise list from one finished session of it: the
+// exercises in the order you did them, with the number of sets you logged.
+//
+// A session records what you did, not what you planned, so rep range, rest and
+// note are kept from the current routine wherever the exercise is still in it,
+// and only worked out from the session's reps for an exercise the routine no
+// longer has. Exercises that no longer resolve or were archived are left out
+// and handed back by id, so the confirmation can say what was dropped rather
+// than restoring a routine that silently has a hole in it.
+export function exercisesFromSession(session, currentExercises = [], isAvailable = () => true) {
+  const current = new Map(currentExercises.map((e) => [e.exerciseId, e]));
+  const exercises = [];
+  const skipped = [];
+
+  for (const entry of session?.entries || []) {
+    if (!isAvailable(entry.exerciseId)) { skipped.push(entry.exerciseId); continue; }
+    if (exercises.some((e) => e.exerciseId === entry.exerciseId)) continue;
+
+    const sets = entry.sets || [];
+    const reps = sets.map((s) => Number(s.reps) || 0).filter((r) => r > 0);
+    const before = current.get(entry.exerciseId);
+    exercises.push({
+      exerciseId: entry.exerciseId,
+      targetSets: Math.max(1, sets.length),
+      repsLow: before?.repsLow ?? (reps.length ? Math.min(...reps) : 8),
+      repsHigh: before?.repsHigh ?? (reps.length ? Math.max(...reps) : 12),
+      restSec: before?.restSec ?? null,
+      note: before?.note ?? '',
+      position: exercises.length,
+    });
+  }
+  return { exercises, skipped };
+}
+
 export function buildExport(data, exportedAt = new Date().toISOString()) {
   return {
     format: EXPORT_FORMAT,

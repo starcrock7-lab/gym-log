@@ -134,6 +134,16 @@ keep their set number and count as working. A superset skips the rest timer —
 you go straight to the paired exercise; an AMRAP set rests as normal. Whatever
 kind a set was, it comes back as that kind next session.
 
+## Restoring a routine
+
+Routines → open one → **Restore from a previous workout**. Pick a past session of
+that routine and its exercise list becomes what you actually did that day, in that
+order, with that many sets. Useful after swapping things around and deciding you
+preferred it before. A confirmation spells out the new list first, and names any
+exercise left out because you have since deleted it. Your logged history is never
+touched. A routine you have never run has nothing to restore from, so the button
+stays off.
+
 ## Sharing your split
 
 Routines → the share icon, or **Share this split** in the routine editor. You get
@@ -245,6 +255,7 @@ test/                   node --test
 
 ## Session log
 
+- 2026-09-16 · restore a routine to how you did it in a past session
 - 2026-09-16 · superset and AMRAP set kinds; superset skips the rest timer
 - 2026-09-13 · an exercise now shows up under every muscle group it trains
 - 2026-09-13 · pick several muscle groups per exercise (both forms; filters still read the first)

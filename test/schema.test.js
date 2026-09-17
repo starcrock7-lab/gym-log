@@ -6,6 +6,7 @@ import {
   normaliseExport,
   normaliseSet,
   setsForNextSession,
+  exercisesFromSession,
   normaliseWorkout,
   normaliseExercise,
   toMuscleGroups,
@@ -286,4 +287,49 @@ test('superset and AMRAP are real kinds that survive saving and the next session
   assert.equal(normaliseSet({ type: 'made-up' }).type, 'working');
   const next = setsForNextSession([did(40, 12, 'superset'), did(135, 14, 'amrap')], 3);
   assert.deepEqual(next.map((s) => s.type), ['superset', 'amrap']);
+});
+
+// ---------------------------------------------------------------------------
+// Restoring a routine from a past session
+// ---------------------------------------------------------------------------
+
+const pastSession = {
+  entries: [
+    { exerciseId: 'row', sets: [did(135, 8), did(135, 8), did(135, 6)] },
+    { exerciseId: 'bench', sets: [did(185, 5), did(185, 5), did(185, 5), did(185, 4), did(165, 8)] },
+  ],
+};
+
+test('restoring takes the exercises in the order you did them, with the sets you logged', () => {
+  const { exercises } = exercisesFromSession(pastSession, []);
+  assert.deepEqual(exercises.map((e) => [e.exerciseId, e.targetSets, e.position]),
+    [['row', 3, 0], ['bench', 5, 1]]);
+});
+
+test('a restored exercise keeps the rep range, rest and note the routine already had', () => {
+  const current = [{ exerciseId: 'bench', targetSets: 3, repsLow: 3, repsHigh: 5, restSec: 180, note: 'pause reps' }];
+  const bench = exercisesFromSession(pastSession, current).exercises.find((e) => e.exerciseId === 'bench');
+  assert.deepEqual([bench.repsLow, bench.repsHigh, bench.restSec, bench.note, bench.targetSets],
+    [3, 5, 180, 'pause reps', 5]);
+});
+
+test('an exercise the routine no longer has gets its rep range from what you did', () => {
+  const row = exercisesFromSession(pastSession, []).exercises.find((e) => e.exerciseId === 'row');
+  assert.deepEqual([row.repsLow, row.repsHigh], [6, 8]);
+});
+
+test('an archived or missing exercise is left out and reported, not restored as a hole', () => {
+  const { exercises, skipped } = exercisesFromSession(pastSession, [], (id) => id !== 'row');
+  assert.deepEqual(exercises.map((e) => e.exerciseId), ['bench']);
+  assert.deepEqual(skipped, ['row']);
+  assert.equal(exercises[0].position, 0, 'positions close up over the gap');
+});
+
+test('an exercise logged twice in one session is restored once', () => {
+  const twice = { entries: [{ exerciseId: 'bench', sets: [did(185, 5)] }, { exerciseId: 'bench', sets: [did(185, 5)] }] };
+  assert.equal(exercisesFromSession(twice, []).exercises.length, 1);
+});
+
+test('restoring from nothing gives nothing rather than failing', () => {
+  assert.deepEqual(exercisesFromSession(undefined), { exercises: [], skipped: [] });
 });
