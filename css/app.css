@@ -657,6 +657,14 @@ textarea.input { min-height: 76px; resize: vertical; }
 .loader-plate:active span { transform: scale(0.92); }
 .loader-empty { position: relative; margin: 0 0 0 8px; padding: 2px 8px; border-radius: 6px; background: var(--card); }
 
+.loader-setup { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 10px 14px; margin-top: 6px; }
+.loader-bar-field { display: inline-flex; align-items: center; gap: 7px; }
+.loader-bar-weight {
+  width: 5.2rem; min-height: var(--tap); text-align: center;
+  font-family: 'Space Grotesk', sans-serif; font-weight: 700; font-variant-numeric: tabular-nums;
+}
+.loader-bar-weight::-webkit-outer-spin-button, .loader-bar-weight::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+
 .loader-adders { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px 7px; }
 .loader-adders .chip { font-family: 'Space Grotesk', sans-serif; font-weight: 700; font-variant-numeric: tabular-nums; }
 .loader-adders .chip:disabled { opacity: 0.35; cursor: default; }

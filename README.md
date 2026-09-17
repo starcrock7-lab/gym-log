@@ -98,7 +98,7 @@ All of it lives in `js/calc.js` as pure functions, and all of it is tested.
 - **The plate calculator** says when a weight cannot be made and by how much, instead of
   quietly rounding. 192.5 lb on a 45 lb bar needs 1.25s, and it will tell you so.
 
-## Loading the bar
+## Loading plates
 
 On a barbell exercise, tap the weight box and a bar opens instead of the keyboard. Tap
 **+45**, **+25** and so on to add a pair; the total counts both sides and updates as you
@@ -106,8 +106,16 @@ go. Tap a plate on the bar to take it off — along with everything outside it, 
 can't pull an inner plate out from behind outer ones. **Use 225 lb** fills the box, and
 **Type it** hands the box back to the keyboard. It opens on whatever weight is already
 there, so nudging 225 to 235 is two taps. Your bar weight and the plates you own come
-from Settings, and you can't add more pairs than you have. Dumbbells, cables and machines
-still type as normal.
+from Settings, and you can't add more pairs than you have.
+
+**Not every bar is your 45.** The loader has a **Bar / sled** weight and a **Both ends /
+One end** switch, and both are remembered per exercise. Set an EZ bar to 20 once and
+EZ curls stay at 20. The T-bar row already knows it loads one end. A plate-loaded
+machine — a leg press, a hack squat — can join in: open the exercise, edit it, and turn
+on **Loaded with plates**.
+
+Dumbbells and cable stacks still type as normal, on purpose: the number on the dumbbell
+or next to the pin is already the number you log, so a picture would only add a tap.
 
 ---
 
@@ -266,6 +274,7 @@ test/                   node --test
 
 ## Session log
 
+- 2026-09-16 · bar/sled weight and one-end loading per exercise; T-bar row no longer doubles its plates
 - 2026-09-16 · on a barbell, tap the weight box to load plates instead of typing
 - 2026-09-16 · a backup test no longer fails at random
 - 2026-09-16 · restore a routine to how you did it in a past session

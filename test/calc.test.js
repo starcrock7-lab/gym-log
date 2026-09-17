@@ -18,6 +18,7 @@ import {
   addPlate,
   removePlate,
   plateOptions,
+  barSetup,
   roundToStep,
   formatWeight,
   formatVolume,
@@ -421,4 +422,41 @@ test('a weight the plates cannot make opens at the closest load below it', () =>
   const plates = platesOnSide(192.5, 45, STANDARD);
   assert.ok(loadedTotalLb(45, plates) <= 192.5);
   assert.equal(loadedTotalLb(45, plates), 190);
+});
+
+// ---------------------------------------------------------------------------
+// Bars, sleds and one-ended loading
+// ---------------------------------------------------------------------------
+
+const SETTINGS = { barWeightLb: 45 };
+
+test('a one-ended lift puts every plate on the single end it loads', () => {
+  assert.deepEqual(platesOnSide(90, 0, STANDARD, 1), [45, 45]);
+  assert.equal(loadedTotalLb(0, [45, 45], 1), 90);
+  assert.equal(loadedTotalLb(45, [45, 45], 2), 225, 'two-ended is unchanged');
+});
+
+test('a barbell lift loads both ends on your standard bar', () => {
+  assert.deepEqual(barSetup({ id: 'back-squat', equipment: 'Barbell' }, SETTINGS),
+    { plateLoaded: true, sides: 2, barLb: 45 });
+});
+
+// The bug this exists to fix: a T-bar row doubled its plates on a 45 lb bar.
+test('a T-bar row loads one end and counts the plates, not a 45 lb bar', () => {
+  assert.deepEqual(barSetup({ id: 't-bar-row', equipment: 'Barbell' }, SETTINGS),
+    { plateLoaded: true, sides: 1, barLb: 0 });
+});
+
+test('a machine does not take plates until it is told to', () => {
+  assert.equal(barSetup({ id: 'leg-press', equipment: 'Machine' }, SETTINGS).plateLoaded, false);
+  assert.deepEqual(barSetup({ id: 'leg-press', equipment: 'Machine', plateLoaded: true }, SETTINGS),
+    { plateLoaded: true, sides: 2, barLb: 0 });
+});
+
+test('a bar weight or side count set on the exercise beats every default', () => {
+  const ez = barSetup({ id: 'ez-bar-curl', equipment: 'Barbell', barWeightLb: 20 }, SETTINGS);
+  assert.equal(ez.barLb, 20);
+  const oneEnd = barSetup({ id: 'landmine-press', equipment: 'Barbell', loadedSides: 1, barWeightLb: 0 }, SETTINGS);
+  assert.deepEqual([oneEnd.sides, oneEnd.barLb], [1, 0]);
+  assert.equal(barSetup({ id: 'back-squat', equipment: 'Barbell', plateLoaded: false }, SETTINGS).plateLoaded, false);
 });

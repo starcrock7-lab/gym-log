@@ -27,7 +27,7 @@ Git email must be `starcrock7@gmail.com`.
 ## Verify after every change
 
 ```sh
-npm test                                            # 132 tests, node --test
+npm test                                            # 140 tests, node --test
 for f in $(find js test scripts -name '*.js'); do node --check "$f"; done
 ```
 
@@ -316,11 +316,25 @@ show a numeric keypad. Nothing may shift under a thumb mid-set.
   a missing Finish affordance look exactly like a broken history feature — keep
   finishing obvious, and don't let Discard be the only action at the foot of the
   workout screen.
-- **On a barbell, the weight box opens the bar loader, not the keyboard.** The input
-  is `readOnly` and its click opens `plateLoaderSheet`; "Type it" clears `readOnly`
-  and focuses it. The loader writes back through the same silent `write()` as typing,
-  so the typing-never-redraws rule still holds. Only `equipment === 'Barbell'` gets
-  it — dumbbells and machines type as before. The loader maths (`platesOnSide`,
+- **On anything loaded with plates, the weight box opens the loader, not the
+  keyboard.** `barSetup(exercise, settings)` in `calc.js` decides: barbell lifts by
+  default, anything with `plateLoaded: true` (a leg press), and never one with
+  `plateLoaded: false`. It also gives the bar/sled weight and whether plates go on one
+  end or both. The input is `readOnly` and its click opens `plateLoaderSheet`; "Type
+  it" clears `readOnly`. The loader writes the weight through the same silent
+  `write()` as typing, and only *then* saves the exercise — saving redraws the
+  screen, and that redraw must paint the new weight, not the old one.
+- **Bar weights are never guessed.** Only a two-ended barbell lift assumes your
+  standard bar. An EZ or trap bar opens on it too until you set theirs once in the
+  loader, because those genuinely vary. The seeded T-bar row is known by id to load
+  one end — a fact about the movement, not about anyone's equipment. `plateLoaded`,
+  `barWeightLb` and `loadedSides` are `null` until set, so an untouched exercise keeps
+  following its equipment. `normaliseExercise` must carry them or a save strips them.
+- **Dumbbell racks and cable stacks deliberately have no loader.** The plan listed
+  them. But the number on a dumbbell or beside a stack pin *is* the number you log —
+  there is no arithmetic for a picture to save you, so a sheet is just an extra tap.
+  The loader earns its place where the maths is real: bar + plates × ends. A plate-
+  loaded dumbbell handle would qualify, and fits `barSetup` as it is. The loader maths (`platesOnSide`,
   `addPlate`, `removePlate`, `plateOptions`) is pure and tested in `calc.js`: one side
   is shown because one side is what you load, a plate comes off with everything
   outside it, and you cannot add more pairs than you own.

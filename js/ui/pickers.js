@@ -1,7 +1,7 @@
 import { h, sheet, closeSheet, icon, frag, mount } from '../dom.js';
 import { state, saveExercise } from '../store.js';
 import {
-  formatWeight, platesOnSide, loadedTotalLb, addPlate, removePlate, plateOptions,
+  formatWeight, platesOnSide, loadedTotalLb, addPlate, removePlate, plateOptions, barSetup,
 } from '../calc.js';
 import { MUSCLE_GROUPS, EQUIPMENT } from '../schema.js';
 
@@ -160,9 +160,11 @@ export function newExerciseSheet(prefillName = '', onCreated) {
 // Opens on whatever weight is already in the box, so adjusting 225 to 235 is two
 // taps rather than a rebuild. `onType` is passed when it was opened from the
 // weight box, and hands the box back to the keyboard.
-export function plateLoaderSheet({ weightLb, onUse, onType }) {
-  const { barWeightLb, plates: inventory } = state.settings;
-  let plates = platesOnSide(Number(weightLb) || barWeightLb, barWeightLb, inventory);
+export function plateLoaderSheet({ weightLb, exercise, onUse, onType }) {
+  const { plates: inventory } = state.settings;
+  const setup = barSetup(exercise, state.settings);
+  let { barLb, sides } = setup;
+  let plates = platesOnSide(Number(weightLb) || barLb, barLb, inventory, sides);
 
   // Height tracks plate size, so a glance tells 45s from 10s before you read them.
   const plateHeight = (lb) => Math.round(Math.min(96, 32 + lb * 1.4));
@@ -170,15 +172,47 @@ export function plateLoaderSheet({ weightLb, onUse, onType }) {
   const total = h('div', { class: 'loader-total', 'aria-live': 'polite' });
   const bar = h('div', { class: 'loader-bar' });
   const adders = h('div', { class: 'loader-adders' });
+  const hint = h('p', { class: 'center muted small' });
+
+  // Bar or sled weight, and which ends take plates. Set once per exercise: an EZ
+  // bar is not your 45, and a T-bar row loads one end.
+  const barInput = h('input', {
+    class: 'input loader-bar-weight', type: 'number', inputmode: 'decimal', step: '2.5', min: '0',
+    value: formatWeight(barLb), 'aria-label': 'Bar or sled weight in pounds',
+    onfocus: (e) => e.target.select(),
+    onchange: (e) => { barLb = Math.max(0, Number(e.target.value) || 0); render(); },
+  });
+  const sideChip = (n, label) => h('button', {
+    class: 'chip', type: 'button', 'aria-pressed': 'false',
+    onclick: () => { sides = n; render(); },
+  }, label);
+  const bothEnds = sideChip(2, 'Both ends');
+  const oneEnd = sideChip(1, 'One end');
+
   const use = h('button', {
     class: 'btn btn-primary',
-    onclick: () => { closeSheet(); onUse(loadedTotalLb(barWeightLb, plates)); },
+    onclick: () => {
+      closeSheet();
+      // Weight first, then the exercise. Saving the exercise redraws the screen,
+      // and that redraw has to paint the new weight rather than the old one.
+      onUse(loadedTotalLb(barLb, plates, sides));
+      if (exercise && (barLb !== setup.barLb || sides !== setup.sides)) {
+        saveExercise({ ...exercise, barWeightLb: barLb, loadedSides: sides });
+      }
+    },
   });
 
   const render = () => {
-    const lb = loadedTotalLb(barWeightLb, plates);
+    const lb = loadedTotalLb(barLb, plates, sides);
     total.textContent = `${formatWeight(lb)} lb`;
     use.textContent = `Use ${formatWeight(lb)} lb`;
+    for (const [chip, n] of [[bothEnds, 2], [oneEnd, 1]]) {
+      chip.classList.toggle('on', sides === n);
+      chip.setAttribute('aria-pressed', sides === n ? 'true' : 'false');
+    }
+    hint.textContent = sides === 2
+      ? 'One end shown, counted twice · tap a plate to take it off'
+      : 'Plates on one end only · tap a plate to take it off';
 
     bar.replaceChildren(
       h('div', { class: 'loader-sleeve', 'aria-hidden': 'true' }),
@@ -191,23 +225,26 @@ export function plateLoaderSheet({ weightLb, onUse, onType }) {
       }, h('span', { style: { height: `${plateHeight(p)}px` } }, formatWeight(p)))),
       // Native replaceChildren stringifies null into a visible "null"; h() skips
       // it, this does not.
-      ...(plates.length ? [] : [h('p', { class: 'loader-empty muted small' }, 'Empty bar')]),
+      ...(plates.length ? [] : [h('p', { class: 'loader-empty muted small' }, 'No plates')]),
     );
 
     adders.replaceChildren(...plateOptions(inventory, plates).map(({ lb: p, available }) =>
       h('button', {
         class: 'chip', type: 'button', disabled: !available,
-        'aria-label': `Add a pair of ${formatWeight(p)}s`,
+        'aria-label': sides === 2 ? `Add a pair of ${formatWeight(p)}s` : `Add a ${formatWeight(p)}`,
         onclick: () => { plates = addPlate(plates, p); render(); },
       }, `+${formatWeight(p)}`)));
   };
   render();
 
-  sheet('Load the bar', frag(
+  sheet('Load plates', frag(
     total,
-    h('p', { class: 'center muted small' },
-      `${formatWeight(barWeightLb)} lb bar · one side shown · tap a plate to take it off`),
+    h('div', { class: 'loader-setup' },
+      h('label', { class: 'loader-bar-field' }, h('span', { class: 'muted small' }, 'Bar / sled'), barInput, h('span', { class: 'muted small' }, 'lb')),
+      h('div', { class: 'chip-row' }, bothEnds, oneEnd),
+    ),
     h('div', { class: 'loader-bar-wrap' }, bar),
+    hint,
     adders,
   ), {
     actions: [

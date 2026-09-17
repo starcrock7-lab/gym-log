@@ -333,3 +333,23 @@ test('an exercise logged twice in one session is restored once', () => {
 test('restoring from nothing gives nothing rather than failing', () => {
   assert.deepEqual(exercisesFromSession(undefined), { exercises: [], skipped: [] });
 });
+
+test('an exercise keeps how it is loaded through a save', () => {
+  const out = normaliseExercise({ id: 'lp', name: 'Leg Press', plateLoaded: true, barWeightLb: 75, loadedSides: 2 });
+  assert.deepEqual([out.plateLoaded, out.barWeightLb, out.loadedSides], [true, 75, 2]);
+});
+
+test('an exercise nobody configured stays unconfigured', () => {
+  const out = normaliseExercise({ id: 'x', name: 'x' });
+  assert.deepEqual([out.plateLoaded, out.barWeightLb, out.loadedSides], [null, null, null]);
+});
+
+// Number(null) is 0 and Number('') is 0: both must stay "not set", not become a 0 lb bar.
+test('a missing bar weight is not mistaken for a zero-pound bar', () => {
+  for (const blank of [undefined, null, '', 'abc', -5]) {
+    assert.equal(normaliseExercise({ id: 'x', name: 'x', barWeightLb: blank }).barWeightLb, null, String(blank));
+  }
+  assert.equal(normaliseExercise({ id: 'x', name: 'x', barWeightLb: 0 }).barWeightLb, 0, 'a real 0 is kept');
+  assert.equal(normaliseExercise({ id: 'x', name: 'x', barWeightLb: '20' }).barWeightLb, 20);
+  assert.equal(normaliseExercise({ id: 'x', name: 'x', loadedSides: 3 }).loadedSides, null);
+});

@@ -170,6 +170,14 @@ export function normaliseExercise(exercise) {
     isBodyweight: Boolean(exercise.isBodyweight),
     isCustom: Boolean(exercise.isCustom),
     defaultRestSec: Number(exercise.defaultRestSec) || null,
+    // How the exercise takes plates. null means "follow the defaults" (see
+    // barSetup in calc.js), so an exercise nobody configured stays unconfigured
+    // and keeps following them if its equipment changes.
+    plateLoaded: typeof exercise.plateLoaded === 'boolean' ? exercise.plateLoaded : null,
+    barWeightLb: Number.isFinite(Number(exercise.barWeightLb)) && exercise.barWeightLb !== null
+      && exercise.barWeightLb !== '' && Number(exercise.barWeightLb) >= 0
+      ? Number(exercise.barWeightLb) : null,
+    loadedSides: exercise.loadedSides === 1 || exercise.loadedSides === 2 ? exercise.loadedSides : null,
     note: exercise.note || '',
     archived: Boolean(exercise.archived),
   };

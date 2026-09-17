@@ -278,7 +278,7 @@ function normaliseInventory(inventory = []) {
     .sort((a, b) => b.lb - a.lb);
 }
 
-export function platesFor(targetLb, barLb = 45, inventory = [45, 35, 25, 10, 5, 2.5]) {
+export function platesFor(targetLb, barLb = 45, inventory = [45, 35, 25, 10, 5, 2.5], sides = 2) {
   const target = Number(targetLb) || 0;
   const bar = Number(barLb) || 0;
 
@@ -286,7 +286,7 @@ export function platesFor(targetLb, barLb = 45, inventory = [45, 35, 25, 10, 5, 
     return { reachable: false, reason: 'below-bar', perSide: [], achievedLb: bar, remainderLb: target - bar, barLb: bar };
   }
 
-  const perSideTarget = (target - bar) / 2;
+  const perSideTarget = (target - bar) / sides;
   const plates = normaliseInventory(inventory);
 
   const perSide = [];
@@ -302,7 +302,7 @@ export function platesFor(targetLb, barLb = 45, inventory = [45, 35, 25, 10, 5, 
   }
 
   const loadedPerSide = perSideTarget - remaining;
-  const achievedLb = bar + loadedPerSide * 2;
+  const achievedLb = bar + loadedPerSide * sides;
   const remainderLb = target - achievedLb;
 
   return {
@@ -323,14 +323,36 @@ export function platesFor(targetLb, barLb = 45, inventory = [45, 35, 25, 10, 5, 
 // One side of the bar as a flat list of plates, heaviest nearest the collar —
 // the order you actually slide them on. The total counts both sides.
 
-export function platesOnSide(targetLb, barLb, inventory) {
-  return platesFor(targetLb, barLb, inventory).perSide
+export function platesOnSide(targetLb, barLb, inventory, sides = 2) {
+  return platesFor(targetLb, barLb, inventory, sides).perSide
     .flatMap(({ lb, count }) => Array.from({ length: count }, () => lb));
 }
 
-export function loadedTotalLb(barLb, plates) {
-  const total = (Number(barLb) || 0) + 2 * plates.reduce((sum, lb) => sum + lb, 0);
+export function loadedTotalLb(barLb, plates, sides = 2) {
+  const total = (Number(barLb) || 0) + sides * plates.reduce((sum, lb) => sum + lb, 0);
   return Math.round(total * 100) / 100;
+}
+
+// How an exercise takes plates. Barbell lifts load by default; anything else --
+// a leg press, a hack squat -- can opt in. Whatever is set on the exercise wins.
+//
+// The bar is only assumed to be your standard bar for a two-ended barbell lift.
+// An EZ or trap bar genuinely varies, so no weight is guessed for them: they open
+// on the standard bar until you set theirs once. A lift loaded on one end starts
+// at zero, because the convention there is to log the plates.
+//
+// A landmine row loads one end. That is a fact about the movement, not a guess
+// about anyone's equipment, so the seeded one is known here by id.
+const ONE_ENDED = new Set(['t-bar-row']);
+
+export function barSetup(exercise, settings = {}) {
+  const sides = exercise?.loadedSides ?? (ONE_ENDED.has(exercise?.id) ? 1 : 2);
+  const isBarbell = exercise?.equipment === 'Barbell';
+  return {
+    plateLoaded: exercise?.plateLoaded ?? isBarbell,
+    sides,
+    barLb: exercise?.barWeightLb ?? (isBarbell && sides === 2 ? (Number(settings.barWeightLb) || 0) : 0),
+  };
 }
 
 // Wherever you tap, the new plate lands in weight order, heaviest inside.

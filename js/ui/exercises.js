@@ -2,7 +2,7 @@ import { h, frag, icon, screen, empty, relativeDay, sheet, closeSheet, confirmSh
 import { state, exerciseById, finishedWorkouts, saveExercise, removeExercise } from '../store.js';
 import {
   personalRecords, trendVerdict, exerciseSessions, estimate1RM, effectiveLoadLb,
-  formatWeight, formatVolume, isConfident,
+  formatWeight, formatVolume, isConfident, barSetup,
 } from '../calc.js';
 import { lineChart } from '../charts.js';
 import { newExerciseSheet, muscleGroupField } from './pickers.js';
@@ -196,6 +196,7 @@ function exerciseOptions(exercise) {
   const equipment = h('select', { class: 'input' }, EQUIPMENT.map((g) => h('option', { value: g, selected: g === exercise.equipment }, g)));
   const rest = h('input', { class: 'input', type: 'number', inputmode: 'numeric', placeholder: `Default (${state.settings.defaultRestSec}s)`, value: exercise.defaultRestSec ?? '' });
   const bodyweight = h('input', { type: 'checkbox', checked: exercise.isBodyweight });
+  const plates = h('input', { type: 'checkbox', checked: barSetup(exercise, state.settings).plateLoaded });
 
   sheet('Edit exercise', frag(
     h('div', { class: 'field' }, h('label', {}, 'Name'), name),
@@ -203,6 +204,10 @@ function exerciseOptions(exercise) {
     h('div', { class: 'field' }, h('label', {}, 'Equipment'), equipment),
     h('div', { class: 'field' }, h('label', {}, 'Rest between sets (seconds)'), rest),
     h('label', { class: 'switch' }, h('span', {}, 'Loaded by bodyweight'), bodyweight),
+    h('label', { class: 'switch' },
+      h('span', {}, 'Loaded with plates',
+        h('div', { class: 'muted small' }, 'Tap the weight to stack plates — a leg press or hack squat, not only a barbell')),
+      plates),
     h('button', {
       class: 'btn btn-danger btn-block',
       onclick: async () => {
@@ -227,6 +232,10 @@ function exerciseOptions(exercise) {
             equipment: equipment.value,
             defaultRestSec: Number(rest.value) || null,
             isBodyweight: bodyweight.checked,
+            // Stored only when it differs from what the equipment implies, so an
+            // exercise you never touched keeps following its equipment if that
+            // changes later.
+            plateLoaded: plates.checked === (equipment.value === 'Barbell') ? null : plates.checked,
           });
           closeSheet();
           toast('Saved');
