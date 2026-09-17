@@ -63,9 +63,10 @@ export function setRow({ entry, entryIndex, set, setIndex, previous, exercise, b
       });
       onSetLogged();
 
-      // A drop set is taken straight off the back of the one before it — that
-      // is the whole point — so ticking one must not start a rest countdown.
-      if (nowDone && !isWarmup && set.type !== 'drop') {
+      // A drop set is taken straight off the back of the one before it, and a
+      // superset goes straight to its paired exercise — resting is the opposite
+      // of the point, so neither starts a countdown.
+      if (nowDone && !isWarmup && set.type !== 'drop' && set.type !== 'superset') {
         const rest = entry.restSec || exercise?.defaultRestSec || state.settings.defaultRestSec;
         if (rest > 0) { await startRest(rest, exercise?.name || ''); repaintTimer(); }
       }
@@ -80,7 +81,10 @@ export function setRow({ entry, entryIndex, set, setIndex, previous, exercise, b
       class: `set-no${isWarmup ? ' warmup' : ''}${set.type === 'drop' ? ' drop' : ''}`,
       'aria-label': 'Change set type',
       onclick: () => setTypeSheet(entryIndex, setIndex, onStructuralChange),
-    }, isWarmup ? 'W' : set.type === 'drop' ? 'D' : String(workingSetNumber(entry.sets, setIndex))),
+    }, isWarmup ? 'W' : set.type === 'drop' ? 'D'
+      // Superset and AMRAP are still numbered working sets, so the letter rides
+      // alongside the number rather than replacing it the way W and D do.
+      : `${workingSetNumber(entry.sets, setIndex)}${KIND_MARK[set.type] || ''}`),
 
     previousSet
       ? h('button', {
@@ -103,6 +107,8 @@ export function setRow({ entry, entryIndex, set, setIndex, previous, exercise, b
 // Set 1 is your first real set. Warm-ups take no number, and neither do drop
 // sets — a drop hangs off the set above it rather than being a set of its own,
 // which is how you would count them out loud.
+const KIND_MARK = { superset: 'S', amrap: 'A' };
+
 export function workingSetNumber(sets, index) {
   let n = 0;
   for (let i = 0; i <= index; i += 1) {
@@ -148,6 +154,8 @@ function setTypeSheet(entryIndex, setIndex, onStructuralChange) {
         ['working', 'Working set', 'Counts toward volume, records and charts'],
         ['warmup', 'Warm-up', 'Logged, but never counts toward a record'],
         ['drop', 'Drop set', 'Counts as working. No rest timer, no set number.'],
+        ['superset', 'Superset', 'Counts as working. No rest timer — straight to the paired exercise.'],
+        ['amrap', 'AMRAP', 'As many reps as possible. Counts as working.'],
         ['failure', 'To failure', 'Counts as working'],
       ].map(([type, title, note]) =>
         h('button', {

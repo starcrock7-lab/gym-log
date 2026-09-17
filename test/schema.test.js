@@ -105,7 +105,9 @@ test('normalising fills in fields an older backup never had', () => {
 });
 
 test('an unknown set type falls back to working rather than corrupting filters', () => {
-  assert.equal(normaliseSet({ type: 'superset' }).type, 'working');
+  // 'superset' used to be the example here; it became a real kind, so use one
+  // that will never be.
+  assert.equal(normaliseSet({ type: 'not-a-kind' }).type, 'working');
   assert.equal(normaliseSet({ type: 'warmup' }).type, 'warmup');
 });
 
@@ -276,4 +278,12 @@ test('the seed library arrives in the new shape', () => {
   const seeded = SEED_EXERCISES.map(normaliseExercise);
   assert.equal(seeded.every((e) => Array.isArray(e.muscleGroups) && e.muscleGroups.length >= 1), true);
   assert.equal(seeded.find((e) => e.id === 'barbell-bench-press').muscleGroups[0], 'Chest');
+});
+
+test('superset and AMRAP are real kinds that survive saving and the next session', () => {
+  assert.equal(normaliseSet({ type: 'superset' }).type, 'superset');
+  assert.equal(normaliseSet({ type: 'amrap' }).type, 'amrap');
+  assert.equal(normaliseSet({ type: 'made-up' }).type, 'working');
+  const next = setsForNextSession([did(40, 12, 'superset'), did(135, 14, 'amrap')], 3);
+  assert.deepEqual(next.map((s) => s.type), ['superset', 'amrap']);
 });

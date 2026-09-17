@@ -2,6 +2,7 @@ import { h, frag, icon, screen, empty, relativeDay, sheet, closeSheet, confirmSh
 import { state, finishedWorkouts, workoutById, exerciseById, exerciseName, saveWorkout, removeWorkout, saveRoutine } from '../store.js';
 import { sessionTotals, formatVolume, formatDuration, formatWeight, workingSets, effectiveLoadLb } from '../calc.js';
 import { sessionRow } from './home.js';
+import { SET_TYPES } from '../schema.js';
 
 export function historyScreen() {
   const history = finishedWorkouts();
@@ -177,7 +178,7 @@ function editSession(workout) {
             ...entry.sets.flatMap((set, setIndex) => [
               h('span', { class: `set-no${set.type === 'warmup' ? ' warmup' : ''}` }, set.type === 'warmup' ? 'W' : String(setIndex + 1)),
               h('select', { class: 'set-input', onchange: (e) => { set.type = e.target.value; render(); } },
-                ['working', 'warmup', 'drop', 'failure'].map((t) => h('option', { value: t, selected: set.type === t }, t))),
+                SET_TYPES.map((t) => h('option', { value: t, selected: set.type === t }, t))),
               h('input', { class: 'set-input', type: 'number', inputmode: 'decimal', step: '2.5', value: set.weightLb, onchange: (e) => { set.weightLb = Number(e.target.value) || 0; } }),
               h('input', { class: 'set-input', type: 'number', inputmode: 'numeric', value: set.reps, onchange: (e) => { set.reps = Math.max(0, Math.floor(Number(e.target.value) || 0)); } }),
               h('button', { class: 'icon-btn', 'aria-label': 'Delete set', onclick: () => { entry.sets.splice(setIndex, 1); if (!entry.sets.length) draft.entries.splice(entryIndex, 1); render(); } }, icon('trash')),

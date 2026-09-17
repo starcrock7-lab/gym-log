@@ -27,7 +27,7 @@ Git email must be `starcrock7@gmail.com`.
 ## Verify after every change
 
 ```sh
-npm test                                            # 117 tests, node --test
+npm test                                            # 120 tests, node --test
 for f in $(find js test scripts -name '*.js'); do node --check "$f"; done
 ```
 
@@ -112,9 +112,11 @@ lose nothing. Do not batch or debounce this.
 ### Warm-ups are logged and then ignored
 
 `isWorkingSet()` in `calc.js` is the gate: completed, and not a warm-up. Warm-ups
-never reach volume, PRs, charts or the trend verdict. Drop sets and sets to
-failure *do* count as working. If you add a set type, decide which side it is on
-and add a test.
+never reach volume, PRs, charts or the trend verdict. Drop, superset, AMRAP and
+failure sets *do* count as working. If you add a set type, decide which side it
+is on and add a test — and grep for places that list kinds by name, because a
+list of the working kinds silently ignores a new one. Rest is skipped for drop
+and superset: resting is the opposite of the point of both.
 
 ### PRs are recomputed, never incremented
 

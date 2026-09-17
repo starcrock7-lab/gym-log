@@ -231,3 +231,8 @@ test('an entry with no groups at all still lands somewhere', () => {
   const plan = planImport(decodeShare(encodeShare(payloadNoGroups)), [], []);
   assert.deepEqual(plan.items[0].definition.muscleGroups, ['Other']);
 });
+
+test('superset and AMRAP sets keep their set numbers; warm-ups and drops do not take one', () => {
+  const sets = [{ type: 'warmup' }, { type: 'working' }, { type: 'superset' }, { type: 'drop' }, { type: 'amrap' }];
+  assert.deepEqual(sets.map((_, i) => workingSetNumber(sets, i)), [0, 1, 2, 2, 3]);
+});

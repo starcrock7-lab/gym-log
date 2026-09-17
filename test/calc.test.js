@@ -368,3 +368,10 @@ test('converting to kilos and back returns the same weight', () => {
   const lb = 176.4;
   assert.ok(Math.abs(kgToLb(lbToKg(lb)) - lb) < 1e-9);
 });
+
+// CLAUDE.md: a new set kind must decide which side of "working" it is on.
+test('a superset and an AMRAP set both count as working sets', () => {
+  assert.equal(isWorkingSet({ type: 'superset', done: true, weightLb: 50, reps: 10 }), true);
+  assert.equal(isWorkingSet({ type: 'amrap', done: true, weightLb: 135, reps: 14 }), true);
+  assert.equal(isWorkingSet({ type: 'amrap', done: false, weightLb: 135, reps: 14 }), false);
+});

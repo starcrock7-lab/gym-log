@@ -309,7 +309,7 @@ export async function addSetToActive(entryIndex, { type = 'working' } = {}) {
     if (type === 'drop') {
       const loaded = [...sets].reverse();
       const base =
-        loaded.find((s) => (s.type === 'working' || s.type === 'failure') && s.weightLb > 0)?.weightLb ??
+        loaded.find((s) => s.type !== 'warmup' && s.type !== 'drop' && s.weightLb > 0)?.weightLb ??
         loaded.find((s) => s.weightLb > 0)?.weightLb ??
         0;
       const pct = Number(state.settings.dropPercent) || 20;

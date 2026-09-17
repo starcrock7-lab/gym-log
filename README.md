@@ -127,6 +127,13 @@ the back of the set before it, which is the point.
 Drop sets count as working sets: they are in your volume and can set records.
 They just don't take a set number of their own, so the column reads `1 D 2 3`.
 
+## Set kinds
+
+Tap a set's number to change its kind. **Superset** (`2S`) and **AMRAP** (`3A`)
+keep their set number and count as working. A superset skips the rest timer —
+you go straight to the paired exercise; an AMRAP set rests as normal. Whatever
+kind a set was, it comes back as that kind next session.
+
 ## Sharing your split
 
 Routines → the share icon, or **Share this split** in the routine editor. You get
@@ -238,6 +245,7 @@ test/                   node --test
 
 ## Session log
 
+- 2026-09-16 · superset and AMRAP set kinds; superset skips the rest timer
 - 2026-09-13 · an exercise now shows up under every muscle group it trains
 - 2026-09-13 · pick several muscle groups per exercise (both forms; filters still read the first)
 - 2026-09-13 · set kinds survive into the next session — a drop set opens as a drop set again

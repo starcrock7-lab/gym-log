@@ -29,7 +29,7 @@ export const EXPORT_VERSION = 1;
 // file should never contain the credentials to reach another backup.
 export const EXPORTED_STORES = ['exercises', 'routines', 'workouts', 'bodyWeights'];
 
-export const SET_TYPES = ['working', 'warmup', 'drop', 'failure'];
+export const SET_TYPES = ['working', 'warmup', 'drop', 'superset', 'amrap', 'failure'];
 
 export const MUSCLE_GROUPS = [
   'Chest', 'Back', 'Shoulders', 'Biceps', 'Triceps', 'Forearms',
